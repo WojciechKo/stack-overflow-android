@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.text.Html;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -12,9 +13,12 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
@@ -119,14 +123,21 @@ public class MainActivity extends Activity {
                 holder = (ViewHolder) convertView.getTag();
             }
             StackOverflowApi.Topic topic = getItem(position);
-            holder.title.setText(topic.title);
-
+            holder.title.setText(Html.fromHtml(topic.title));
+            holder.authorName.setText(topic.owner.displayName);
+            Picasso.with(context).load(topic.owner.profileImageUrl).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
             return convertView;
         }
 
         public static class ViewHolder {
             @InjectView(R.id.title)
             TextView title;
+
+            @InjectView(R.id.profileImage)
+            ImageView profileImage;
+
+            @InjectView(R.id.authorName)
+            TextView authorName;
         }
     }
 }

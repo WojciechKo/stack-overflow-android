@@ -22,8 +22,19 @@ public interface StackOverflowApi {
         @SerializedName("title")
         public String title;
 
+        @SerializedName("owner")
+        public Owner owner;
+
         public Topic(String title) {
             this.title = title;
         }
+    }
+
+    public static class Owner {
+        @SerializedName("profile_image")
+        public String profileImageUrl;
+
+        @SerializedName("display_name")
+        public String displayName;
     }
 }
