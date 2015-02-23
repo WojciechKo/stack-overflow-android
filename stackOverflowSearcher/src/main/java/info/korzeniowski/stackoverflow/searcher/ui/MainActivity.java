@@ -6,16 +6,17 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.ArrayAdapter;
+import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import java.util.List;
 
 import javax.inject.Inject;
 
@@ -69,16 +70,7 @@ public class MainActivity extends Activity {
         return new Callback<StackOverflowApi.QueryResult>() {
             @Override
             public void success(StackOverflowApi.QueryResult queryResult, Response response) {
-                list.setAdapter(new ArrayAdapter<String>(
-                        getApplicationContext(),
-                        android.R.layout.simple_list_item_1,
-                        Lists.transform(queryResult.topics, new Function<StackOverflowApi.Topic, String>() {
-                            @Override
-                            public String apply(StackOverflowApi.Topic input) {
-                                return input.title;
-                            }
-                        })));
-
+                list.setAdapter(new QuestionAdapter(MainActivity.this, queryResult.topics));
                 ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
             }
 
@@ -87,6 +79,55 @@ public class MainActivity extends Activity {
                 Toast.makeText(getApplicationContext(), "Error: " + error.toString(), Toast.LENGTH_SHORT).show();
             }
         };
+    }
+
+    public static class QuestionAdapter extends BaseAdapter {
+
+        private Context context;
+        private List<StackOverflowApi.Topic> topics;
+
+        public QuestionAdapter(Context context, List<StackOverflowApi.Topic> topics) {
+            this.context = context;
+            this.topics = topics;
+        }
+
+        @Override
+        public int getCount() {
+            return topics.size();
+        }
+
+        @Override
+        public StackOverflowApi.Topic getItem(int position) {
+            return topics.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder holder;
+
+            if (convertView == null) {
+                convertView = LayoutInflater.from(context).inflate(R.layout.question_item, parent, false);
+                holder = new ViewHolder();
+                ButterKnife.inject(holder, convertView);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+            StackOverflowApi.Topic topic = getItem(position);
+            holder.title.setText(topic.title);
+
+            return convertView;
+        }
+
+        public static class ViewHolder {
+            @InjectView(R.id.title)
+            TextView title;
+        }
     }
 }
 
