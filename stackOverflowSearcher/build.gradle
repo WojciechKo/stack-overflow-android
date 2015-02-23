@@ -1,0 +1,131 @@
+buildscript {
+    repositories {
+        jcenter()
+        maven {url 'https://oss.sonatype.org/content/repositories/snapshots/'}
+    }
+
+    dependencies {
+        classpath "com.neenbedankt.gradle.plugins:android-apt:1.4"
+        classpath 'com.android.tools.build:gradle:1.0.1'
+        classpath 'com.github.jcandksolutions.gradle:android-unit-test:2.1.1'
+    }
+}
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion "21.1.2"
+
+    defaultConfig {
+        applicationId "info.korzeniowski.stackoverflow.searcher"
+        minSdkVersion 15
+        targetSdkVersion 21
+        versionCode 1
+        versionName "1.0"
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    packagingOptions {
+        exclude 'LICENSE.txt'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/services/javax.annotation.processing.Processor'
+    }
+
+    sourceSets {
+        androidTest.setRoot('src/test')
+    }
+
+    signingConfigs {
+        config {
+            keyAlias signingKeyAlias
+            storePassword signingStorePassword
+            keyPassword signingKeyPassword
+            storeFile file(signingStoreFile)
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.config
+        }
+        release {
+            signingConfig signingConfigs.config
+        }
+    }
+}
+
+apply plugin: 'com.neenbedankt.android-apt'
+
+apt {
+    arguments {
+        androidManifestFile variant.outputs[0].processResources.manifestFile
+        resourcePackageName android.defaultConfig.applicationId
+    }
+}
+
+apply plugin: 'android-unit-test'
+
+androidUnitTest {
+    downloadDependenciesSources true
+    downloadDependenciesJavadoc true
+    downloadTestDependenciesSources true
+    downloadTestDependenciesJavadoc true
+
+    testTasks {
+        all {
+            //Allows to run tests in parallel by specifying how many threads to run tests on.
+            maxParallelForks = 4
+            //Allow to group a number of tests for each thread to run.
+            forkEvery = 5
+            minHeapSize = '128m'
+            maxHeapSize = '1024m'
+        }
+    }
+}
+
+repositories {
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+    jcenter()
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile 'com.android.support:appcompat-v7:21.0.3'
+
+    // Guava
+    compile 'com.google.guava:guava:18.0'
+
+    // Butter Knife
+    compile 'com.jakewharton:butterknife:5.1.2'
+
+    // Retrofit
+    compile 'com.squareup.retrofit:retrofit:1.6.1'
+
+    // OKHttp
+    compile 'com.squareup.okhttp:okhttp-urlconnection:2.0.0'
+    compile 'com.squareup.okhttp:okhttp:2.0.0'
+
+    // Dagger
+    def daggerVersion = '1.2.+'
+    apt "com.squareup.dagger:dagger-compiler:$daggerVersion"
+    compile "com.squareup.dagger:dagger:$daggerVersion"
+    testCompile "com.squareup.dagger:dagger-compiler:$daggerVersion"
+
+    // JUnit
+    testCompile 'junit:junit:4.11'
+
+    // Mockito
+    testCompile 'org.mockito:mockito-core:1.9.5'
+
+    // Robolectric
+    testCompile 'org.robolectric:robolectric:2.4'
+
+    //Fest Android
+    testCompile 'com.squareup:fest-android:1.0.8'
+}
