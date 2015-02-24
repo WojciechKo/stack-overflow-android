@@ -107,6 +107,9 @@ dependencies {
     // Picasso
     compile 'com.squareup.picasso:picasso:2.5.0'
 
+    // Otto
+    compile 'com.squareup:otto:1.3.6'
+
     // Retrofit
     compile 'com.squareup.retrofit:retrofit:1.6.1'
 

@@ -5,6 +5,7 @@ import android.widget.Toast;
 
 import com.squareup.okhttp.Cache;
 import com.squareup.okhttp.OkHttpClient;
+import com.squareup.otto.Bus;
 
 import java.io.IOException;
 import java.net.CookieManager;
@@ -15,6 +16,7 @@ import javax.inject.Singleton;
 import dagger.Module;
 import dagger.Provides;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
+import info.korzeniowski.stackoverflow.searcher.ui.list.ListFragment;
 import info.korzeniowski.stackoverflow.searcher.ui.list.MainActivity;
 import info.korzeniowski.stackoverflow.searcher.util.Utils;
 import retrofit.RequestInterceptor;
@@ -24,6 +26,7 @@ import retrofit.client.OkClient;
 @Module(
         injects = {
                 MainActivity.class,
+                ListFragment.class
         }
 )
 public class MyModule {
@@ -83,5 +86,11 @@ public class MyModule {
                 .build();
 
         return restAdapter.create(StackOverflowApi.class);
+    }
+
+    @Provides
+    @Singleton
+    Bus provideBus() {
+        return new Bus();
     }
 }
