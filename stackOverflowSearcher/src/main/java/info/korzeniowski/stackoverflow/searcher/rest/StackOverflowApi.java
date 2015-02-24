@@ -22,6 +22,9 @@ public interface StackOverflowApi {
         @SerializedName("title")
         public String title;
 
+        @SerializedName("tags")
+        public List<String> tags;
+
         @SerializedName("owner")
         public Owner owner;
 

@@ -2,11 +2,20 @@ package info.korzeniowski.stackoverflow.searcher.ui;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.text.Html;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.style.ImageSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -35,6 +44,8 @@ import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
+
+import static info.korzeniowski.stackoverflow.searcher.util.Utils.dipToPixels;
 
 public class MainActivity extends Activity {
 
@@ -156,12 +167,59 @@ public class MainActivity extends Activity {
             holder.title.setText(Html.fromHtml(topic.title));
             holder.authorName.setText(topic.owner.displayName);
             Picasso.with(context).load(topic.owner.profileImageUrl).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
+
+            SpannableStringBuilder tagStringBuilder = new SpannableStringBuilder();
+            for (String tag : topic.tags) {
+                ImageSpan imageSpan = new ImageSpan(getImageSpanForTag(tag));
+                tagStringBuilder.append(tag);
+                tagStringBuilder.setSpan(imageSpan, tagStringBuilder.length() - tag.length(), tagStringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                tagStringBuilder.append(" ");
+            }
+            holder.tags.setText(tagStringBuilder);
+
             return convertView;
+        }
+
+        private BitmapDrawable getImageSpanForTag(String tagName) {
+            // creating textview dynamically
+            final TextView tv = new TextView(getContext());
+            tv.setText(tagName);
+            tv.setTextSize(35);
+            Drawable drawable = getContext().getResources().getDrawable(R.drawable.oval);
+            drawable.setColorFilter(Color.parseColor("#e4edf4"), PorterDuff.Mode.SRC);
+            tv.setBackground(drawable);
+            tv.setTextColor(Color.parseColor("#3e6d8e"));
+            tv.setPadding(dipToPixels(getContext(), 15), 0, dipToPixels(getContext(), 15), dipToPixels(getContext(), 1));
+
+            // convert View to Drawable
+            int spec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+            tv.measure(spec, spec);
+            tv.layout(0, 0, tv.getMeasuredWidth(), tv.getMeasuredHeight());
+            Bitmap b = Bitmap.createBitmap(tv.getMeasuredWidth(), tv.getMeasuredHeight(), Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(b);
+            c.translate(-tv.getScrollX(), -tv.getScrollY());
+            tv.draw(c);
+            tv.setDrawingCacheEnabled(true);
+            Bitmap cacheBmp = tv.getDrawingCache();
+            Bitmap viewBmp = cacheBmp.copy(Bitmap.Config.ARGB_8888, true);
+            tv.destroyDrawingCache();
+
+            BitmapDrawable bitmapDrawable = new BitmapDrawable(viewBmp);
+            bitmapDrawable.setBounds(0, 0, bitmapDrawable.getIntrinsicWidth(), bitmapDrawable.getIntrinsicHeight());
+
+            return bitmapDrawable;
+        }
+
+        private Context getContext() {
+            return context;
         }
 
         public static class ViewHolder {
             @InjectView(R.id.title)
             TextView title;
+
+            @InjectView(R.id.tags)
+            TextView tags;
 
             @InjectView(R.id.profileImage)
             ImageView profileImage;
