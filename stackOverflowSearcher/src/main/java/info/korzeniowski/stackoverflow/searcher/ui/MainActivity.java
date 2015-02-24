@@ -47,6 +47,7 @@ import info.korzeniowski.stackoverflow.searcher.App;
 import info.korzeniowski.stackoverflow.searcher.R;
 import info.korzeniowski.stackoverflow.searcher.model.Question;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
+import info.korzeniowski.stackoverflow.searcher.ui.details.DetailsActivity;
 import io.realm.Realm;
 import retrofit.Callback;
 import retrofit.RetrofitError;

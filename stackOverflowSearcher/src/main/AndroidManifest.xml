@@ -26,7 +26,7 @@
         </activity>
 
         <activity
-                android:name=".ui.DetailsActivity"
+                android:name=".ui.details.DetailsActivity"
                 android:parentActivityName=".ui.MainActivity">
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"

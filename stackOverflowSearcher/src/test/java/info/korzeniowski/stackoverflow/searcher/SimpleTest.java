@@ -25,7 +25,7 @@ import javax.inject.Inject;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
-import info.korzeniowski.stackoverflow.searcher.ui.DetailsActivity;
+import info.korzeniowski.stackoverflow.searcher.ui.details.DetailsActivity;
 import info.korzeniowski.stackoverflow.searcher.ui.MainActivity;
 import retrofit.Callback;
 
