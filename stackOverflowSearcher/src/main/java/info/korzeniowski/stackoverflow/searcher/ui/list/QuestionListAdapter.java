@@ -26,6 +26,7 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -76,7 +77,7 @@ public class QuestionListAdapter extends BaseAdapter {
 
         QuestionAdapterData item = getItem(position);
         holder.title.setText(Html.fromHtml(item.getTitle()));
-        holder.date.setText(android.text.format.DateFormat.getDateFormat(context).format(item.getCreationDate()));
+        holder.date.setText(getDateText(item));
         holder.authorName.setText(item.getOwnerDisplayName());
         holder.vote.setText(item.getVotes().toString());
 
@@ -104,6 +105,12 @@ public class QuestionListAdapter extends BaseAdapter {
         holder.title.setTypeface(null, item.getVisited() ? Typeface.NORMAL : Typeface.BOLD);
 
         return convertView;
+    }
+
+    private String getDateText(QuestionAdapterData item) {
+        return android.text.format.DateFormat.getTimeFormat(context).format(item.getCreationDate())
+                + "\n"
+                + android.text.format.DateFormat.getDateFormat(context).format(item.getCreationDate());
     }
 
     private BitmapDrawable getImageSpanForTag(String tagName) {
