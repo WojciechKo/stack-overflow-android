@@ -1,6 +1,7 @@
 package info.korzeniowski.stackoverflow.searcher;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -17,11 +18,15 @@ import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
+import java.util.ArrayList;
+
 import javax.inject.Inject;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
+import info.korzeniowski.stackoverflow.searcher.ui.DetailsActivity;
+import info.korzeniowski.stackoverflow.searcher.ui.MainActivity;
 import retrofit.Callback;
 
 import static org.fest.assertions.api.ANDROID.assertThat;
@@ -81,7 +86,7 @@ public class SimpleTest {
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 Callback<StackOverflowApi.QueryResult> callback = (Callback<StackOverflowApi.QueryResult>) invocation.getArguments()[1];
                 StackOverflowApi.QueryResult result = new StackOverflowApi.QueryResult();
-                result.topics = Lists.newArrayList(new StackOverflowApi.Topic("Topic 1"), new StackOverflowApi.Topic("Topic 2"));
+                result.setTopics(Lists.newArrayList(new StackOverflowApi.Topic().setTitle("Topic 1"), new StackOverflowApi.Topic().setTitle("Topic 2")));
                 callback.success(result, null);
                 return null;
             }
@@ -94,5 +99,25 @@ public class SimpleTest {
 
         // then
         assertThat(list).hasCount(2);
+    }
+
+    @Test
+    public void shouldStartNextActivity() {
+        // given
+        ArrayList<StackOverflowApi.Topic> topics =
+                Lists.newArrayList(
+                        new StackOverflowApi.Topic().setTitle("Topic 1").setLink("http://top1"),
+                        new StackOverflowApi.Topic().setTitle("Topic 2").setLink("http://top2")
+                );
+        list.setAdapter(new MainActivity.QuestionAdapter(activity, topics));
+
+        // when
+        int index = 1;
+        Robolectric.shadowOf(list).performItemClick(index);
+
+        // then
+        Intent expectedIntent = new Intent(activity, DetailsActivity.class);
+        expectedIntent.putExtra(DetailsActivity.EXTRA_URL, topics.get(index).getLink());
+        assertThat(Robolectric.shadowOf(activity).getNextStartedActivity()).isEqualTo(expectedIntent);
     }
 }

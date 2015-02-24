@@ -2,6 +2,7 @@ package info.korzeniowski.stackoverflow.searcher.ui;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -38,6 +39,7 @@ import javax.inject.Inject;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
+import butterknife.OnItemClick;
 import info.korzeniowski.stackoverflow.searcher.App;
 import info.korzeniowski.stackoverflow.searcher.R;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
@@ -78,6 +80,14 @@ public class MainActivity extends Activity {
         okHttpClient.setReadTimeout(timeoutMillisec, TimeUnit.MILLISECONDS);
     }
 
+    @OnItemClick(R.id.list)
+    public void onListItemClicked(int position) {
+        Intent intent = new Intent(this, DetailsActivity.class);
+        StackOverflowApi.Topic item = (StackOverflowApi.Topic) list.getAdapter().getItem(position);
+        intent.putExtra(DetailsActivity.EXTRA_URL, item.getLink());
+        startActivity(intent);
+    }
+
     @OnClick(R.id.search)
     public void onSearchClicked() {
         if (TextUtils.isEmpty(query.getText())) {
@@ -105,7 +115,6 @@ public class MainActivity extends Activity {
             }
         });
 
-
         stackOverflowApi.query(lastQuery, getUpdateListCallback());
     }
 
@@ -113,7 +122,7 @@ public class MainActivity extends Activity {
         return new Callback<StackOverflowApi.QueryResult>() {
             @Override
             public void success(StackOverflowApi.QueryResult queryResult, Response response) {
-                list.setAdapter(new QuestionAdapter(MainActivity.this, queryResult.topics));
+                list.setAdapter(new QuestionAdapter(MainActivity.this, queryResult.getTopics()));
                 ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
                 swipeRefresh.setRefreshing(false);
             }
@@ -164,12 +173,12 @@ public class MainActivity extends Activity {
                 holder = (ViewHolder) convertView.getTag();
             }
             StackOverflowApi.Topic topic = getItem(position);
-            holder.title.setText(Html.fromHtml(topic.title));
-            holder.authorName.setText(topic.owner.displayName);
-            Picasso.with(context).load(topic.owner.profileImageUrl).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
+            holder.title.setText(Html.fromHtml(topic.getTitle()));
+            holder.authorName.setText(topic.getOwner().getDisplayName());
+            Picasso.with(context).load(topic.getOwner().getProfileImageUrl()).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
 
             SpannableStringBuilder tagStringBuilder = new SpannableStringBuilder();
-            for (String tag : topic.tags) {
+            for (String tag : topic.getTags()) {
                 ImageSpan imageSpan = new ImageSpan(getImageSpanForTag(tag));
                 tagStringBuilder.append(tag);
                 tagStringBuilder.setSpan(imageSpan, tagStringBuilder.length() - tag.length(), tagStringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);

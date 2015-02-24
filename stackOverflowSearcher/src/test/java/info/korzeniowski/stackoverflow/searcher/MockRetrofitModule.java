@@ -14,7 +14,8 @@ import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
                 SimpleTest.class
         },
         overrides = true,
-        complete = false
+        complete = false,
+        library = true
 )
 public class MockRetrofitModule {
     @Provides
