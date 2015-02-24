@@ -1,4 +1,4 @@
-package info.korzeniowski.stackoverflow.searcher.ui;
+package info.korzeniowski.stackoverflow.searcher.ui.list;
 
 import android.app.Activity;
 import android.content.Context;

@@ -26,7 +26,7 @@ import butterknife.ButterKnife;
 import butterknife.InjectView;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
 import info.korzeniowski.stackoverflow.searcher.ui.details.DetailsActivity;
-import info.korzeniowski.stackoverflow.searcher.ui.MainActivity;
+import info.korzeniowski.stackoverflow.searcher.ui.list.MainActivity;
 import retrofit.Callback;
 
 import static org.fest.assertions.api.ANDROID.assertThat;
@@ -58,7 +58,7 @@ public class SimpleTest {
         ((TestApp) Robolectric.application.getApplicationContext()).addModules(MockRetrofitModule.class);
         ((TestApp) Robolectric.application.getApplicationContext()).inject(this);
 
-        activity = Robolectric.buildActivity(info.korzeniowski.stackoverflow.searcher.ui.MainActivity.class).create().start().resume().get();
+        activity = Robolectric.buildActivity(MainActivity.class).create().start().resume().get();
         ButterKnife.inject(this, activity);
     }
 

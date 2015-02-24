@@ -15,7 +15,7 @@ import javax.inject.Singleton;
 import dagger.Module;
 import dagger.Provides;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
-import info.korzeniowski.stackoverflow.searcher.ui.MainActivity;
+import info.korzeniowski.stackoverflow.searcher.ui.list.MainActivity;
 import info.korzeniowski.stackoverflow.searcher.util.Utils;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
