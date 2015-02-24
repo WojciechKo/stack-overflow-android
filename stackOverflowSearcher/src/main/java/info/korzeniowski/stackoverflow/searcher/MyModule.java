@@ -15,10 +15,12 @@ import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
+import info.korzeniowski.stackoverflow.searcher.model.QuestionService;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
 import info.korzeniowski.stackoverflow.searcher.ui.list.ListFragment;
 import info.korzeniowski.stackoverflow.searcher.ui.list.MainActivity;
 import info.korzeniowski.stackoverflow.searcher.util.Utils;
+import io.realm.Realm;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.client.OkClient;
@@ -92,5 +94,10 @@ public class MyModule {
     @Singleton
     Bus provideBus() {
         return new Bus();
+    }
+
+    @Provides
+    QuestionService provideQuestionService() {
+        return QuestionService.get(context);
     }
 }

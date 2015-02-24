@@ -45,7 +45,7 @@ public class MainActivity extends FragmentActivity {
         }
         query.setError(null);
 
-        bus.post(new SearchEvent(query.getText().toString()));
+        bus.post(new SearchEvent(SearchEvent.StackOverflowQuery.builder().intitle(query.getText().toString()).build()));
     }
 }
 

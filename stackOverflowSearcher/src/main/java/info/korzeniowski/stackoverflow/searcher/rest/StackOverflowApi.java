@@ -3,15 +3,16 @@ package info.korzeniowski.stackoverflow.searcher.rest;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
+import java.util.Map;
 
 import retrofit.Callback;
 import retrofit.http.GET;
-import retrofit.http.Query;
+import retrofit.http.QueryMap;
 
 public interface StackOverflowApi {
 
     @GET("/search?site=stackoverflow")
-    void query(@Query("intitle") String intitle, Callback<QueryResult> callback);
+    void query(@QueryMap Map<String, String> queryMap, Callback<QueryResult> callback);
 
     public static class QueryResult {
         @SerializedName("items")
@@ -105,5 +106,17 @@ public interface StackOverflowApi {
             this.displayName = displayName;
             return this;
         }
+    }
+
+    enum SortBy {
+        ACTIVITY,
+        CREATION,
+        VOTES,
+        RELEVANCE
+    }
+
+    enum OrderType {
+        ASC,
+        DESC
     }
 }

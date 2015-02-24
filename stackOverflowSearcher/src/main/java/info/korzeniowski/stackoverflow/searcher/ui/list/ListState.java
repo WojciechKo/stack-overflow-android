@@ -8,9 +8,17 @@ import auto.parcel.AutoParcel;
 
 @AutoParcel
 abstract class ListState implements Parcelable {
-    abstract List<ListFragment.QuestionAdapter.QuestionAdapterData> adapterDatas();
+    abstract SearchEvent.StackOverflowQuery query();
+    abstract List<QuestionListAdapter.QuestionAdapterData> results();
 
-    static ListState create(List<ListFragment.QuestionAdapter.QuestionAdapterData> adapterDatas) {
-        return new AutoParcel_ListState(adapterDatas);
+    public static Builder builder() {
+        return new AutoParcel_ListState.Builder();
+    }
+
+    @AutoParcel.Builder
+    public interface Builder {
+        public Builder query(SearchEvent.StackOverflowQuery query);
+        public Builder results(List<QuestionListAdapter.QuestionAdapterData> results);
+        public ListState build();
     }
 }
