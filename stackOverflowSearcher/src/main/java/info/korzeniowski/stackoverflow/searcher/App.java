@@ -23,7 +23,7 @@ public class App extends Application {
 
     protected List<Object> getModules() {
         List<Object> modules = new ArrayList<Object>();
-        modules.add(new MyModule());
+        modules.add(new MyModule(this));
         return modules;
     }
 }
