@@ -3,4 +3,5 @@
     <string name="searchButton">Search</string>
     <string name="queryHint">search</string>
     <string name="profileImageDescription">Profile image</string>
+    <string name="queryIsRequired">Query is required</string>
 </resources>

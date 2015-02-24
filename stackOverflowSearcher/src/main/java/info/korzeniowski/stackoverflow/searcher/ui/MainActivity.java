@@ -3,10 +3,10 @@ package info.korzeniowski.stackoverflow.searcher.ui;
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+import android.os.Handler;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.text.Html;
 import android.text.TextUtils;
-import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,9 +18,11 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.squareup.okhttp.OkHttpClient;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
@@ -45,8 +47,16 @@ public class MainActivity extends Activity {
     @InjectView(R.id.list)
     ListView list;
 
+    @InjectView(R.id.swipeRefresh)
+    SwipeRefreshLayout swipeRefresh;
+
     @Inject
     StackOverflowApi stackOverflowApi;
+
+    @Inject
+    OkHttpClient okHttpClient;
+
+    private static final int timeoutMillisec = 8 * 1000;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,33 +64,53 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         ButterKnife.inject(this);
         ((App) getApplication()).inject(this);
-    }
-
-    @Nullable
-    @Override
-    public View onCreateView(String name, Context context, AttributeSet attrs) {
-        return super.onCreateView(name, context, attrs);
+        okHttpClient.setReadTimeout(timeoutMillisec, TimeUnit.MILLISECONDS);
     }
 
     @OnClick(R.id.search)
     public void onSearchClicked() {
         if (TextUtils.isEmpty(query.getText())) {
+            query.setError(getString(R.string.queryIsRequired));
             return;
         }
-        stackOverflowApi.query(query.getText().toString(), getMyApiIndexCallback());
+        query.setError(null);
+        swipeRefresh.setRefreshing(true);
+
+        final String lastQuery = query.getText().toString();
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                stackOverflowApi.query(lastQuery, getUpdateListCallback());
+                new Handler().postDelayed(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                if (swipeRefresh.isRefreshing()) {
+                                    swipeRefresh.setRefreshing(false);
+                                }
+                            }
+                        },
+                        timeoutMillisec);
+            }
+        });
+
+
+        stackOverflowApi.query(lastQuery, getUpdateListCallback());
     }
 
-    private Callback<StackOverflowApi.QueryResult> getMyApiIndexCallback() {
+    private Callback<StackOverflowApi.QueryResult> getUpdateListCallback() {
         return new Callback<StackOverflowApi.QueryResult>() {
             @Override
             public void success(StackOverflowApi.QueryResult queryResult, Response response) {
                 list.setAdapter(new QuestionAdapter(MainActivity.this, queryResult.topics));
                 ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
+                swipeRefresh.setRefreshing(false);
             }
 
             @Override
             public void failure(RetrofitError error) {
                 Toast.makeText(getApplicationContext(), "Error: " + error.toString(), Toast.LENGTH_SHORT).show();
+                swipeRefresh.setRefreshing(false);
             }
         };
     }
