@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
+import java.util.Calendar;
 import java.util.Date;
 
 import javax.inject.Singleton;
@@ -93,7 +94,9 @@ public class MyModule {
         builder.registerTypeAdapter(Date.class, new JsonDeserializer<Date>() {
             @Override
             public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-                return new Date(json.getAsJsonPrimitive().getAsLong());
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTimeInMillis(json.getAsJsonPrimitive().getAsLong() * 1000);
+                return calendar.getTime();
             }
         });
         Gson gson = builder.create();

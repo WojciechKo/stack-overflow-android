@@ -11,14 +11,12 @@ import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.Html;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.style.BackgroundColorSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.style.StyleSpan;
-import android.text.style.TypefaceSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -78,6 +76,7 @@ public class QuestionListAdapter extends BaseAdapter {
 
         QuestionAdapterData item = getItem(position);
         holder.title.setText(Html.fromHtml(item.getTitle()));
+        holder.date.setText(android.text.format.DateFormat.getDateFormat(context).format(item.getCreationDate()));
         holder.authorName.setText(item.getOwnerDisplayName());
         holder.vote.setText(item.getVotes().toString());
 
@@ -153,6 +152,9 @@ public class QuestionListAdapter extends BaseAdapter {
 
         @InjectView(R.id.views)
         TextView views;
+
+        @InjectView(R.id.date)
+        TextView date;
 
         @InjectView(R.id.tags)
         TextView tags;
