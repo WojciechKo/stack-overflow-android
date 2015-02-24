@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
+import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -28,6 +29,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.picasso.Picasso;
 
@@ -42,7 +45,9 @@ import butterknife.OnClick;
 import butterknife.OnItemClick;
 import info.korzeniowski.stackoverflow.searcher.App;
 import info.korzeniowski.stackoverflow.searcher.R;
+import info.korzeniowski.stackoverflow.searcher.model.Question;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
+import io.realm.Realm;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
@@ -71,6 +76,9 @@ public class MainActivity extends Activity {
 
     private static final int timeoutMillisec = 8 * 1000;
 
+    private Realm realm;
+    private QuestionAdapterData questionAdapterData;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,13 +86,30 @@ public class MainActivity extends Activity {
         ButterKnife.inject(this);
         ((App) getApplication()).inject(this);
         okHttpClient.setReadTimeout(timeoutMillisec, TimeUnit.MILLISECONDS);
+        realm = Realm.getInstance(this);
+    }
+
+    @Override
+    protected void onDestroy() {
+        realm.close();
+        super.onDestroy();
     }
 
     @OnItemClick(R.id.list)
     public void onListItemClicked(int position) {
+        QuestionAdapterData item = (QuestionAdapterData) list.getAdapter().getItem(position);
+
+        realm.beginTransaction();
+        Question question = realm.createObject(Question.class);
+        question.setQuestionId(item.getQuestion().getQuestionId());
+        realm.commitTransaction();
+        item.setVisited(true);
+
+        ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
+
         Intent intent = new Intent(this, DetailsActivity.class);
-        StackOverflowApi.Question item = (StackOverflowApi.Question) list.getAdapter().getItem(position);
-        intent.putExtra(DetailsActivity.EXTRA_URL, item.getLink());
+        intent.putExtra(DetailsActivity.EXTRA_URL, item.getQuestion().getLink());
+
         startActivity(intent);
     }
 
@@ -122,7 +147,18 @@ public class MainActivity extends Activity {
         return new Callback<StackOverflowApi.QueryResult>() {
             @Override
             public void success(StackOverflowApi.QueryResult queryResult, Response response) {
-                list.setAdapter(new QuestionAdapter(MainActivity.this, queryResult.getQuestions()));
+                List<QuestionAdapterData> adapterData = Lists.transform(queryResult.getQuestions(), new Function<StackOverflowApi.Question, QuestionAdapterData>() {
+                    @Override
+                    public QuestionAdapterData apply(StackOverflowApi.Question input) {
+                        questionAdapterData = new QuestionAdapterData();
+                        questionAdapterData.setQuestion(input);
+                        Question found = realm.where(Question.class).equalTo("questionId", input.getQuestionId()).findFirst();
+                        questionAdapterData.setVisited(found != null);
+                        return questionAdapterData;
+                    }
+                });
+
+                list.setAdapter(new QuestionAdapter(MainActivity.this, adapterData));
                 ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
                 swipeRefresh.setRefreshing(false);
             }
@@ -135,12 +171,33 @@ public class MainActivity extends Activity {
         };
     }
 
+    public static class QuestionAdapterData {
+        private StackOverflowApi.Question question;
+        private Boolean visited;
+
+        public StackOverflowApi.Question getQuestion() {
+            return question;
+        }
+
+        public void setQuestion(StackOverflowApi.Question question) {
+            this.question = question;
+        }
+
+        public Boolean getVisited() {
+            return visited;
+        }
+
+        public void setVisited(Boolean visited) {
+            this.visited = visited;
+        }
+    }
+
     public static class QuestionAdapter extends BaseAdapter {
 
         private Context context;
-        private List<StackOverflowApi.Question> questions;
+        private List<QuestionAdapterData> questions;
 
-        public QuestionAdapter(Context context, List<StackOverflowApi.Question> questions) {
+        public QuestionAdapter(Context context, List<QuestionAdapterData> questions) {
             this.context = context;
             this.questions = questions;
         }
@@ -151,7 +208,7 @@ public class MainActivity extends Activity {
         }
 
         @Override
-        public StackOverflowApi.Question getItem(int position) {
+        public QuestionAdapterData getItem(int position) {
             return questions.get(position);
         }
 
@@ -172,7 +229,9 @@ public class MainActivity extends Activity {
             } else {
                 holder = (ViewHolder) convertView.getTag();
             }
-            StackOverflowApi.Question question = getItem(position);
+
+            QuestionAdapterData item = getItem(position);
+            StackOverflowApi.Question question = item.getQuestion();
             holder.title.setText(Html.fromHtml(question.getTitle()));
             holder.authorName.setText(question.getOwner().getDisplayName());
             Picasso.with(context).load(question.getOwner().getProfileImageUrl()).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
@@ -185,6 +244,7 @@ public class MainActivity extends Activity {
                 tagStringBuilder.append(" ");
             }
             holder.tags.setText(tagStringBuilder);
+            holder.title.setTypeface(null, item.getVisited() ? Typeface.NORMAL : Typeface.BOLD);
 
             return convertView;
         }
