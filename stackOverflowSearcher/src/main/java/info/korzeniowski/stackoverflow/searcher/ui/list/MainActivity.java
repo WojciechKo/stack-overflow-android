@@ -16,15 +16,11 @@ import info.korzeniowski.stackoverflow.searcher.App;
 import info.korzeniowski.stackoverflow.searcher.R;
 
 public class MainActivity extends FragmentActivity {
-    private static final String LIST_STATE = "LIST_STATE";
-
     @InjectView(R.id.query)
     EditText query;
 
     @Inject
     Bus bus;
-
-    private ListState listState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,22 +28,13 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.inject(this);
         ((App) getApplication()).inject(this);
-        listState = new ListState();
 
         if (savedInstanceState == null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.listFragment, ListFragment.newInstance(listState))
+                    .replace(R.id.listFragment, ListFragment.newInstance())
                     .commit();
-        } else {
-            listState = savedInstanceState.getParcelable(LIST_STATE);
         }
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        outState.putParcelable(LIST_STATE, listState);
-        super.onSaveInstanceState(outState);
     }
 
     @OnClick(R.id.search)
@@ -58,8 +45,7 @@ public class MainActivity extends FragmentActivity {
         }
         query.setError(null);
 
-        listState.query = query.getText().toString();
-        bus.post(new ListStateChanged());
+        bus.post(new SearchEvent(query.getText().toString()));
     }
 }
 

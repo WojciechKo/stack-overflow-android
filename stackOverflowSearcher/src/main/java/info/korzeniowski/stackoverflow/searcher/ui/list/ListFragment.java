@@ -11,6 +11,8 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -35,11 +37,13 @@ import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import auto.parcel.AutoParcel;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnItemClick;
@@ -56,7 +60,7 @@ import retrofit.client.Response;
 import static info.korzeniowski.stackoverflow.searcher.util.Utils.dipToPixels;
 
 public class ListFragment extends Fragment {
-    private static final String ARGUMENT_LIST_STATE = "LIST_STATE";
+    private static final String LIST_DATA = "LIST_DATA";
     private static final int timeoutMillisec = 8 * 1000;
 
     @InjectView(R.id.list)
@@ -77,11 +81,8 @@ public class ListFragment extends Fragment {
     private Realm realm;
     private ListState listState;
 
-    public static ListFragment newInstance(ListState listState) {
+    public static ListFragment newInstance() {
         ListFragment fragment = new ListFragment();
-        Bundle args = new Bundle();
-        args.putParcelable(ARGUMENT_LIST_STATE, listState);
-        fragment.setArguments(args);
         return fragment;
     }
 
@@ -90,7 +91,6 @@ public class ListFragment extends Fragment {
         super.onCreate(savedInstanceState);
         ((App) getActivity().getApplication()).inject(this);
         realm = Realm.getInstance(getActivity());
-        listState = getArguments().getParcelable(ARGUMENT_LIST_STATE);
         okHttpClient.setReadTimeout(timeoutMillisec, TimeUnit.MILLISECONDS);
     }
 
@@ -100,7 +100,17 @@ public class ListFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_list, container, false);
         ButterKnife.inject(this, view);
         bus.register(this);
+        if (savedInstanceState != null) {
+            listState = savedInstanceState.getParcelable(LIST_DATA);
+            list.setAdapter(new QuestionAdapter(getActivity(), listState.adapterDatas()));
+        }
         return view;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelable(LIST_DATA, listState);
     }
 
     @Override
@@ -111,31 +121,32 @@ public class ListFragment extends Fragment {
 
     @Override
     public void onDestroy() {
-        realm.close();
         super.onDestroy();
+        realm.close();
+        realm = null;
     }
 
     @OnItemClick(R.id.list)
     public void onListItemClicked(int position) {
-        QuestionAdapterData item = (QuestionAdapterData) list.getAdapter().getItem(position);
+        QuestionAdapter.QuestionAdapterData item = (QuestionAdapter.QuestionAdapterData) list.getAdapter().getItem(position);
 
         realm.beginTransaction();
         Question question = realm.createObject(Question.class);
-        question.setQuestionId(item.getQuestion().getQuestionId());
+        question.setQuestionId(item.getQuestionId());
         realm.commitTransaction();
         item.setVisited(true);
 
         ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
 
         Intent intent = new Intent(getActivity(), DetailsActivity.class);
-        intent.putExtra(DetailsActivity.EXTRA_URL, item.getQuestion().getLink());
+        intent.putExtra(DetailsActivity.EXTRA_URL, item.getLink());
 
         startActivity(intent);
     }
 
     @Subscribe
-    public void onListStateChanged(ListStateChanged event) {
-        if (Strings.isNullOrEmpty(listState.query)) {
+    public void onSearchEvent(final SearchEvent event) {
+        if (Strings.isNullOrEmpty(event.getQuery())) {
             return;
         }
         swipeRefresh.setRefreshing(true);
@@ -143,7 +154,7 @@ public class ListFragment extends Fragment {
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                stackOverflowApi.query(listState.query, getUpdateListCallback());
+                stackOverflowApi.query(event.getQuery(), getUpdateListCallback());
                 new Handler().postDelayed(
                         new Runnable() {
                             @Override
@@ -157,26 +168,32 @@ public class ListFragment extends Fragment {
             }
         });
 
-        stackOverflowApi.query(listState.query, getUpdateListCallback());
+        stackOverflowApi.query(event.getQuery(), getUpdateListCallback());
     }
 
     private Callback<StackOverflowApi.QueryResult> getUpdateListCallback() {
         return new Callback<StackOverflowApi.QueryResult>() {
             @Override
             public void success(StackOverflowApi.QueryResult queryResult, Response response) {
-                List<QuestionAdapterData> adapterData = Lists.transform(queryResult.getQuestions(), new Function<StackOverflowApi.Question, QuestionAdapterData>() {
+                List<QuestionAdapter.QuestionAdapterData> adapterDatas = Lists.newArrayList(Lists.transform(queryResult.getQuestions(), new Function<StackOverflowApi.Question, QuestionAdapter.QuestionAdapterData>() {
                     @Override
-                    public QuestionAdapterData apply(StackOverflowApi.Question input) {
-                        QuestionAdapterData questionAdapterData = new QuestionAdapterData();
-                        questionAdapterData.setQuestion(input);
+                    public QuestionAdapter.QuestionAdapterData apply(StackOverflowApi.Question input) {
+                        QuestionAdapter.QuestionAdapterData questionAdapterData = new QuestionAdapter.QuestionAdapterData();
+                        questionAdapterData.setQuestionId(input.getQuestionId());
+                        questionAdapterData.setTitle(input.getTitle());
+                        questionAdapterData.setTags(input.getTags());
+                        questionAdapterData.setLink(input.getLink());
+                        questionAdapterData.setOwnerDisplayName(input.getOwner().getDisplayName());
+                        questionAdapterData.setOwnerProfileImageUrl(input.getOwner().getProfileImageUrl());
+
                         Question found = realm.where(Question.class).equalTo("questionId", input.getQuestionId()).findFirst();
                         questionAdapterData.setVisited(found != null);
                         return questionAdapterData;
                     }
-                });
+                }));
+                listState = ListState.create(adapterDatas);
 
-                list.setAdapter(new QuestionAdapter(getActivity(), adapterData));
-                ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
+                list.setAdapter(new QuestionAdapter(getActivity(), adapterDatas));
                 swipeRefresh.setRefreshing(false);
             }
 
@@ -188,26 +205,6 @@ public class ListFragment extends Fragment {
         };
     }
 
-    public static class QuestionAdapterData {
-        private StackOverflowApi.Question question;
-        private Boolean visited;
-
-        public StackOverflowApi.Question getQuestion() {
-            return question;
-        }
-
-        public void setQuestion(StackOverflowApi.Question question) {
-            this.question = question;
-        }
-
-        public Boolean getVisited() {
-            return visited;
-        }
-
-        public void setVisited(Boolean visited) {
-            this.visited = visited;
-        }
-    }
 
     public static class QuestionAdapter extends BaseAdapter {
 
@@ -248,13 +245,12 @@ public class ListFragment extends Fragment {
             }
 
             QuestionAdapterData item = getItem(position);
-            StackOverflowApi.Question question = item.getQuestion();
-            holder.title.setText(Html.fromHtml(question.getTitle()));
-            holder.authorName.setText(question.getOwner().getDisplayName());
-            Picasso.with(context).load(question.getOwner().getProfileImageUrl()).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
+            holder.title.setText(Html.fromHtml(item.getTitle()));
+            holder.authorName.setText(item.getOwnerDisplayName());
+            Picasso.with(context).load(item.getOwnerProfileImageUrl()).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
 
             SpannableStringBuilder tagStringBuilder = new SpannableStringBuilder();
-            for (String tag : question.getTags()) {
+            for (String tag : item.getTags()) {
                 ImageSpan imageSpan = new ImageSpan(getImageSpanForTag(tag));
                 tagStringBuilder.append(tag);
                 tagStringBuilder.setSpan(imageSpan, tagStringBuilder.length() - tag.length(), tagStringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -312,6 +308,138 @@ public class ListFragment extends Fragment {
 
             @InjectView(R.id.authorName)
             TextView authorName;
+        }
+
+
+        public static class QuestionAdapterData implements Parcelable {
+            Boolean visited;
+            Long questionId;
+            String title;
+            List<String> tags;
+            String link;
+            String ownerProfileImageUrl;
+            String ownerDisplayName;
+
+            public QuestionAdapterData() {
+
+            }
+
+            protected QuestionAdapterData(Parcel in) {
+                byte visitedVal = in.readByte();
+                visited = visitedVal == 0x02 ? null : visitedVal != 0x00;
+                questionId = in.readByte() == 0x00 ? null : in.readLong();
+                title = in.readString();
+                if (in.readByte() == 0x01) {
+                    tags = new ArrayList<String>();
+                    in.readList(tags, String.class.getClassLoader());
+                } else {
+                    tags = null;
+                }
+                link = in.readString();
+                ownerProfileImageUrl = in.readString();
+                ownerDisplayName = in.readString();
+            }
+
+            @Override
+            public int describeContents() {
+                return 0;
+            }
+
+            @Override
+            public void writeToParcel(Parcel dest, int flags) {
+                if (visited == null) {
+                    dest.writeByte((byte) (0x02));
+                } else {
+                    dest.writeByte((byte) (visited ? 0x01 : 0x00));
+                }
+                if (questionId == null) {
+                    dest.writeByte((byte) (0x00));
+                } else {
+                    dest.writeByte((byte) (0x01));
+                    dest.writeLong(questionId);
+                }
+                dest.writeString(title);
+                if (tags == null) {
+                    dest.writeByte((byte) (0x00));
+                } else {
+                    dest.writeByte((byte) (0x01));
+                    dest.writeList(tags);
+                }
+                dest.writeString(link);
+                dest.writeString(ownerProfileImageUrl);
+                dest.writeString(ownerDisplayName);
+            }
+
+            @SuppressWarnings("unused")
+            public static final Parcelable.Creator<QuestionAdapterData> CREATOR = new Parcelable.Creator<QuestionAdapterData>() {
+                @Override
+                public QuestionAdapterData createFromParcel(Parcel in) {
+                    return new QuestionAdapterData(in);
+                }
+
+                @Override
+                public QuestionAdapterData[] newArray(int size) {
+                    return new QuestionAdapterData[size];
+                }
+            };
+
+
+            public Boolean getVisited() {
+                return visited;
+            }
+
+            public void setVisited(Boolean visited) {
+                this.visited = visited;
+            }
+
+            public Long getQuestionId() {
+                return questionId;
+            }
+
+            public void setQuestionId(Long questionId) {
+                this.questionId = questionId;
+            }
+
+            public String getTitle() {
+                return title;
+            }
+
+            public void setTitle(String title) {
+                this.title = title;
+            }
+
+            public List<String> getTags() {
+                return tags;
+            }
+
+            public void setTags(List<String> tags) {
+                this.tags = tags;
+            }
+
+            public String getLink() {
+                return link;
+            }
+
+            public void setLink(String link) {
+                this.link = link;
+            }
+
+            public String getOwnerProfileImageUrl() {
+                return ownerProfileImageUrl;
+            }
+
+            public void setOwnerProfileImageUrl(String ownerProfileImageUrl) {
+                this.ownerProfileImageUrl = ownerProfileImageUrl;
+            }
+
+            public String getOwnerDisplayName() {
+                return ownerDisplayName;
+            }
+
+            public void setOwnerDisplayName(String ownerDisplayName) {
+                this.ownerDisplayName = ownerDisplayName;
+            }
+
         }
     }
 }

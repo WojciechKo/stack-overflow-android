@@ -117,6 +117,10 @@ dependencies {
     compile 'com.squareup.okhttp:okhttp-urlconnection:2.0.0'
     compile 'com.squareup.okhttp:okhttp:2.0.0'
 
+    def autoParcelVersion = '0.3'
+    compile "com.github.frankiesardo:auto-parcel:$autoParcelVersion"
+    apt "com.github.frankiesardo:auto-parcel-processor:$autoParcelVersion"
+
     // Dagger
     def daggerVersion = '1.2.+'
     apt "com.squareup.dagger:dagger-compiler:$daggerVersion"
