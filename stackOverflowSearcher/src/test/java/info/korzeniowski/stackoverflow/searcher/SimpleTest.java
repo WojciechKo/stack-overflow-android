@@ -86,7 +86,7 @@ public class SimpleTest {
             public Object answer(InvocationOnMock invocation) throws Throwable {
                 Callback<StackOverflowApi.QueryResult> callback = (Callback<StackOverflowApi.QueryResult>) invocation.getArguments()[1];
                 StackOverflowApi.QueryResult result = new StackOverflowApi.QueryResult();
-                result.setTopics(Lists.newArrayList(new StackOverflowApi.Topic().setTitle("Topic 1"), new StackOverflowApi.Topic().setTitle("Topic 2")));
+                result.setQuestions(Lists.newArrayList(new StackOverflowApi.Question().setTitle("Topic 1"), new StackOverflowApi.Question().setTitle("Topic 2")));
                 callback.success(result, null);
                 return null;
             }
@@ -104,12 +104,12 @@ public class SimpleTest {
     @Test
     public void shouldStartNextActivity() {
         // given
-        ArrayList<StackOverflowApi.Topic> topics =
+        ArrayList<StackOverflowApi.Question> questions =
                 Lists.newArrayList(
-                        new StackOverflowApi.Topic().setTitle("Topic 1").setLink("http://top1"),
-                        new StackOverflowApi.Topic().setTitle("Topic 2").setLink("http://top2")
+                        new StackOverflowApi.Question().setTitle("Topic 1").setLink("http://top1"),
+                        new StackOverflowApi.Question().setTitle("Topic 2").setLink("http://top2")
                 );
-        list.setAdapter(new MainActivity.QuestionAdapter(activity, topics));
+        list.setAdapter(new MainActivity.QuestionAdapter(activity, questions));
 
         // when
         int index = 1;
@@ -117,7 +117,7 @@ public class SimpleTest {
 
         // then
         Intent expectedIntent = new Intent(activity, DetailsActivity.class);
-        expectedIntent.putExtra(DetailsActivity.EXTRA_URL, topics.get(index).getLink());
+        expectedIntent.putExtra(DetailsActivity.EXTRA_URL, questions.get(index).getLink());
         assertThat(Robolectric.shadowOf(activity).getNextStartedActivity()).isEqualTo(expectedIntent);
     }
 }

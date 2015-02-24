@@ -83,7 +83,7 @@ public class MainActivity extends Activity {
     @OnItemClick(R.id.list)
     public void onListItemClicked(int position) {
         Intent intent = new Intent(this, DetailsActivity.class);
-        StackOverflowApi.Topic item = (StackOverflowApi.Topic) list.getAdapter().getItem(position);
+        StackOverflowApi.Question item = (StackOverflowApi.Question) list.getAdapter().getItem(position);
         intent.putExtra(DetailsActivity.EXTRA_URL, item.getLink());
         startActivity(intent);
     }
@@ -122,7 +122,7 @@ public class MainActivity extends Activity {
         return new Callback<StackOverflowApi.QueryResult>() {
             @Override
             public void success(StackOverflowApi.QueryResult queryResult, Response response) {
-                list.setAdapter(new QuestionAdapter(MainActivity.this, queryResult.getTopics()));
+                list.setAdapter(new QuestionAdapter(MainActivity.this, queryResult.getQuestions()));
                 ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
                 swipeRefresh.setRefreshing(false);
             }
@@ -138,21 +138,21 @@ public class MainActivity extends Activity {
     public static class QuestionAdapter extends BaseAdapter {
 
         private Context context;
-        private List<StackOverflowApi.Topic> topics;
+        private List<StackOverflowApi.Question> questions;
 
-        public QuestionAdapter(Context context, List<StackOverflowApi.Topic> topics) {
+        public QuestionAdapter(Context context, List<StackOverflowApi.Question> questions) {
             this.context = context;
-            this.topics = topics;
+            this.questions = questions;
         }
 
         @Override
         public int getCount() {
-            return topics.size();
+            return questions.size();
         }
 
         @Override
-        public StackOverflowApi.Topic getItem(int position) {
-            return topics.get(position);
+        public StackOverflowApi.Question getItem(int position) {
+            return questions.get(position);
         }
 
         @Override
@@ -172,13 +172,13 @@ public class MainActivity extends Activity {
             } else {
                 holder = (ViewHolder) convertView.getTag();
             }
-            StackOverflowApi.Topic topic = getItem(position);
-            holder.title.setText(Html.fromHtml(topic.getTitle()));
-            holder.authorName.setText(topic.getOwner().getDisplayName());
-            Picasso.with(context).load(topic.getOwner().getProfileImageUrl()).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
+            StackOverflowApi.Question question = getItem(position);
+            holder.title.setText(Html.fromHtml(question.getTitle()));
+            holder.authorName.setText(question.getOwner().getDisplayName());
+            Picasso.with(context).load(question.getOwner().getProfileImageUrl()).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
 
             SpannableStringBuilder tagStringBuilder = new SpannableStringBuilder();
-            for (String tag : topic.getTags()) {
+            for (String tag : question.getTags()) {
                 ImageSpan imageSpan = new ImageSpan(getImageSpanForTag(tag));
                 tagStringBuilder.append(tag);
                 tagStringBuilder.setSpan(imageSpan, tagStringBuilder.length() - tag.length(), tagStringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);

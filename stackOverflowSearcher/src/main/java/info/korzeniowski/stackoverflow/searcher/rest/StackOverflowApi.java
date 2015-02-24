@@ -15,29 +15,40 @@ public interface StackOverflowApi {
 
     public static class QueryResult {
         @SerializedName("items")
-        private List<Topic> topics;
+        private List<Question> questions;
 
-        public List<Topic> getTopics() {
-            return topics;
+        public List<Question> getQuestions() {
+            return questions;
         }
 
-        public QueryResult setTopics(List<Topic> topics) {
-            this.topics = topics;
+        public QueryResult setQuestions(List<Question> questions) {
+            this.questions = questions;
             return this;
         }
     }
 
-    public static class Topic {
+    public static class Question {
+        @SerializedName("question_id")
+        private Long questionId;
         private String title;
         private List<String> tags;
         private Owner owner;
         private String link;
 
+        public Long getQuestionId() {
+            return questionId;
+        }
+
+        public Question setQuestionId(Long questionId) {
+            this.questionId = questionId;
+            return this;
+        }
+
         public String getTitle() {
             return title;
         }
 
-        public Topic setTitle(String title) {
+        public Question setTitle(String title) {
             this.title = title;
             return this;
         }
@@ -46,7 +57,7 @@ public interface StackOverflowApi {
             return tags;
         }
 
-        public Topic setTags(List<String> tags) {
+        public Question setTags(List<String> tags) {
             this.tags = tags;
             return this;
         }
@@ -55,7 +66,7 @@ public interface StackOverflowApi {
             return owner;
         }
 
-        public Topic setOwner(Owner owner) {
+        public Question setOwner(Owner owner) {
             this.owner = owner;
             return this;
         }
@@ -64,7 +75,7 @@ public interface StackOverflowApi {
             return link;
         }
 
-        public Topic setLink(String link) {
+        public Question setLink(String link) {
             this.link = link;
             return this;
         }
