@@ -177,8 +177,13 @@ public class ListFragment extends Fragment {
                         QuestionListAdapter.QuestionAdapterData questionAdapterData = new QuestionListAdapter.QuestionAdapterData();
                         questionAdapterData.setQuestionId(input.getQuestionId());
                         questionAdapterData.setTitle(input.getTitle());
-                        questionAdapterData.setTags(input.getTags());
                         questionAdapterData.setLink(input.getLink());
+                        questionAdapterData.setVotes(input.getVotes());
+                        questionAdapterData.setAnswers(input.getAnswers());
+                        questionAdapterData.setViews(input.getViews());
+                        questionAdapterData.setAnswered(input.getAnswered());
+                        questionAdapterData.setCreationDate(input.getCreationDate());
+                        questionAdapterData.setTags(input.getTags());
                         questionAdapterData.setOwnerDisplayName(input.getOwner().getDisplayName());
                         questionAdapterData.setOwnerProfileImageUrl(input.getOwner().getProfileImageUrl());
 

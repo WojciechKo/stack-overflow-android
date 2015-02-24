@@ -2,6 +2,7 @@ package info.korzeniowski.stackoverflow.searcher.rest;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -32,9 +33,24 @@ public interface StackOverflowApi {
         @SerializedName("question_id")
         private Long questionId;
         private String title;
+        private String link;
+
+        @SerializedName("score")
+        private Long votes;
+
+        @SerializedName("answer_count")
+        private Long answers;
+
+        @SerializedName("view_count")
+        private Long views;
+
+        @SerializedName("is_answered")
+        private Boolean answered;
+
+        @SerializedName("creation_date")
+        private Date creationDate;
         private List<String> tags;
         private Owner owner;
-        private String link;
 
         public Long getQuestionId() {
             return questionId;
@@ -54,6 +70,60 @@ public interface StackOverflowApi {
             return this;
         }
 
+        public String getLink() {
+            return link;
+        }
+
+        public Question setLink(String link) {
+            this.link = link;
+            return this;
+        }
+
+        public Long getVotes() {
+            return votes;
+        }
+
+        public Question setVotes(Long votes) {
+            this.votes = votes;
+            return this;
+        }
+
+        public Long getAnswers() {
+            return answers;
+        }
+
+        public Question setAnswers(Long answers) {
+            this.answers = answers;
+            return this;
+        }
+
+        public Long getViews() {
+            return views;
+        }
+
+        public Question setViews(Long views) {
+            this.views = views;
+            return this;
+        }
+
+        public Boolean getAnswered() {
+            return answered;
+        }
+
+        public Question setAnswered(Boolean answered) {
+            this.answered = answered;
+            return this;
+        }
+
+        public Date getCreationDate() {
+            return creationDate;
+        }
+
+        public Question setCreationDate(Date creationDate) {
+            this.creationDate = creationDate;
+            return this;
+        }
+
         public List<String> getTags() {
             return tags;
         }
@@ -69,15 +139,6 @@ public interface StackOverflowApi {
 
         public Question setOwner(Owner owner) {
             this.owner = owner;
-            return this;
-        }
-
-        public String getLink() {
-            return link;
-        }
-
-        public Question setLink(String link) {
-            this.link = link;
             return this;
         }
     }

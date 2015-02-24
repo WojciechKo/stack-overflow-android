@@ -11,9 +11,14 @@ import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.Html;
+import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.style.BackgroundColorSpan;
+import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
+import android.text.style.StyleSpan;
+import android.text.style.TypefaceSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +29,7 @@ import android.widget.TextView;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import butterknife.ButterKnife;
@@ -73,6 +79,19 @@ public class QuestionListAdapter extends BaseAdapter {
         QuestionAdapterData item = getItem(position);
         holder.title.setText(Html.fromHtml(item.getTitle()));
         holder.authorName.setText(item.getOwnerDisplayName());
+        holder.vote.setText(item.getVotes().toString());
+
+        SpannableStringBuilder answerText = new SpannableStringBuilder(item.getAnswers().toString());
+        if (item.getAnswered()) {
+            answerText.replace(0, 0, " ");
+            answerText.append(" ");
+            answerText.setSpan(new BackgroundColorSpan(Color.parseColor("#75845c")), 0, answerText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            answerText.setSpan(new ForegroundColorSpan(Color.WHITE), 0, answerText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            answerText.setSpan(new StyleSpan(Typeface.BOLD), 0, answerText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        holder.answer.setText(answerText);
+        holder.views.setText(item.getViews().toString());
+
         Picasso.with(context).load(item.getOwnerProfileImageUrl()).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
 
         SpannableStringBuilder tagStringBuilder = new SpannableStringBuilder();
@@ -126,6 +145,15 @@ public class QuestionListAdapter extends BaseAdapter {
         @InjectView(R.id.title)
         TextView title;
 
+        @InjectView(R.id.vote)
+        TextView vote;
+
+        @InjectView(R.id.answer)
+        TextView answer;
+
+        @InjectView(R.id.views)
+        TextView views;
+
         @InjectView(R.id.tags)
         TextView tags;
 
@@ -137,13 +165,18 @@ public class QuestionListAdapter extends BaseAdapter {
     }
 
     public static class QuestionAdapterData implements Parcelable {
-        Boolean visited;
-        Long questionId;
-        String title;
-        List<String> tags;
-        String link;
-        String ownerProfileImageUrl;
-        String ownerDisplayName;
+        private Boolean visited;
+        private Long questionId;
+        private String title;
+        private List<String> tags;
+        private Long votes;
+        private Long answers;
+        private Long views;
+        private Boolean answered;
+        private Date creationDate;
+        private String link;
+        private String ownerProfileImageUrl;
+        private String ownerDisplayName;
 
         public QuestionAdapterData() {
 
@@ -160,6 +193,13 @@ public class QuestionListAdapter extends BaseAdapter {
             } else {
                 tags = null;
             }
+            votes = in.readByte() == 0x00 ? null : in.readLong();
+            answers = in.readByte() == 0x00 ? null : in.readLong();
+            views = in.readByte() == 0x00 ? null : in.readLong();
+            byte answeredVal = in.readByte();
+            answered = answeredVal == 0x02 ? null : answeredVal != 0x00;
+            long tmpCreationDate = in.readLong();
+            creationDate = tmpCreationDate != -1 ? new Date(tmpCreationDate) : null;
             link = in.readString();
             ownerProfileImageUrl = in.readString();
             ownerDisplayName = in.readString();
@@ -190,13 +230,37 @@ public class QuestionListAdapter extends BaseAdapter {
                 dest.writeByte((byte) (0x01));
                 dest.writeList(tags);
             }
+            if (votes == null) {
+                dest.writeByte((byte) (0x00));
+            } else {
+                dest.writeByte((byte) (0x01));
+                dest.writeLong(votes);
+            }
+            if (answers == null) {
+                dest.writeByte((byte) (0x00));
+            } else {
+                dest.writeByte((byte) (0x01));
+                dest.writeLong(answers);
+            }
+            if (views == null) {
+                dest.writeByte((byte) (0x00));
+            } else {
+                dest.writeByte((byte) (0x01));
+                dest.writeLong(views);
+            }
+            if (answered == null) {
+                dest.writeByte((byte) (0x02));
+            } else {
+                dest.writeByte((byte) (answered ? 0x01 : 0x00));
+            }
+            dest.writeLong(creationDate != null ? creationDate.getTime() : -1L);
             dest.writeString(link);
             dest.writeString(ownerProfileImageUrl);
             dest.writeString(ownerDisplayName);
         }
 
         @SuppressWarnings("unused")
-        public static final Creator<QuestionAdapterData> CREATOR = new Creator<QuestionAdapterData>() {
+        public static final Parcelable.Creator<QuestionAdapterData> CREATOR = new Parcelable.Creator<QuestionAdapterData>() {
             @Override
             public QuestionAdapterData createFromParcel(Parcel in) {
                 return new QuestionAdapterData(in);
@@ -208,6 +272,50 @@ public class QuestionListAdapter extends BaseAdapter {
             }
         };
 
+        public Long getVotes() {
+            return votes;
+        }
+
+        public QuestionAdapterData setVotes(Long votes) {
+            this.votes = votes;
+            return this;
+        }
+
+        public Long getAnswers() {
+            return answers;
+        }
+
+        public QuestionAdapterData setAnswers(Long answers) {
+            this.answers = answers;
+            return this;
+        }
+
+        public Long getViews() {
+            return views;
+        }
+
+        public QuestionAdapterData setViews(Long views) {
+            this.views = views;
+            return this;
+        }
+
+        public Boolean getAnswered() {
+            return answered;
+        }
+
+        public QuestionAdapterData setAnswered(Boolean answered) {
+            this.answered = answered;
+            return this;
+        }
+
+        public Date getCreationDate() {
+            return creationDate;
+        }
+
+        public QuestionAdapterData setCreationDate(Date creationDate) {
+            this.creationDate = creationDate;
+            return this;
+        }
 
         public Boolean getVisited() {
             return visited;
