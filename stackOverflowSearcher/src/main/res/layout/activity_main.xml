@@ -9,6 +9,19 @@
             android:hint="@string/queryHint"
             android:inputType="textNoSuggestions"/>
 
+    <LinearLayout android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+        <TextView android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Sort by: "/>
+
+        <Spinner android:id="@+id/sortBy"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+    </LinearLayout>
+
     <Button android:id="@+id/search"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
