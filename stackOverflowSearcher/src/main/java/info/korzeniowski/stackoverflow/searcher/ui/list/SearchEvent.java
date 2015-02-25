@@ -37,7 +37,8 @@ public class SearchEvent {
         public static Builder builder() {
             return new AutoParcel_SearchEvent_StackOverflowQuery.Builder()
                     .order(StackOverflowApi.OrderType.DESC)
-                    .sort(StackOverflowApi.SortBy.CREATION);
+                    .sort(StackOverflowApi.SortBy.CREATION)
+                    .intitle("");
         }
 
         public Map<String, String> getMappedQuery() {
