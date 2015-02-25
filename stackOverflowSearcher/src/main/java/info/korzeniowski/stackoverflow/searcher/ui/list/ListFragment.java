@@ -9,17 +9,20 @@ import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
 
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -40,6 +43,7 @@ import retrofit.client.Response;
 
 public class ListFragment extends Fragment {
     private static final String LIST_DATA = "LIST_DATA";
+    private static final String NEXT_PAGE = "NEXT_PAGE";
     private static final int timeoutMillisec = 8 * 1000;
 
     @InjectView(R.id.list)
@@ -62,6 +66,10 @@ public class ListFragment extends Fragment {
 
     private ListState.Builder listStateBuilder;
 
+    private int nextPage;
+    private List<QuestionListAdapter.QuestionAdapterData> questionList;
+    private boolean isLoading = false;
+
     public static ListFragment newInstance() {
         ListFragment fragment = new ListFragment();
         return fragment;
@@ -82,27 +90,23 @@ public class ListFragment extends Fragment {
         listStateBuilder = ListState.builder();
         if (savedInstanceState != null) {
             final ListState listState = savedInstanceState.getParcelable(LIST_DATA);
-            listStateBuilder.query(listState.query()).results(listState.results());
 
-            list.setAdapter(new QuestionListAdapter(getActivity(), listState.results()));
+            questionList = listState.results();
+            list.setAdapter(new QuestionListAdapter(getActivity(), questionList));
+
+            nextPage = savedInstanceState.getInt(NEXT_PAGE);
+            if (nextPage > 0) {
+                list.setOnScrollListener(createOnScrollListener(listState.query()));
+            }
 
             swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                 @Override
                 public void onRefresh() {
-                    stackOverflowApi.query(listState.query().getMappedQuery(), getUpdateListCallback());
-                    new Handler().postDelayed(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (swipeRefresh.isRefreshing()) {
-                                        swipeRefresh.setRefreshing(false);
-                                    }
-                                }
-                            },
-                            timeoutMillisec);
+                    refreshList(listState.query());
                 }
             });
 
+            listStateBuilder.query(listState.query()).results(listState.results());
         }
         return view;
     }
@@ -111,6 +115,7 @@ public class ListFragment extends Fragment {
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelable(LIST_DATA, listStateBuilder.build());
+        outState.putInt(NEXT_PAGE, nextPage);
     }
 
     @Override
@@ -148,52 +153,29 @@ public class ListFragment extends Fragment {
         swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                stackOverflowApi.query(event.getStackOverflowQuery().getMappedQuery(), getUpdateListCallback());
-                new Handler().postDelayed(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                if (swipeRefresh.isRefreshing()) {
-                                    swipeRefresh.setRefreshing(false);
-                                }
-                            }
-                        },
-                        timeoutMillisec);
+                refreshList(event.getStackOverflowQuery());
             }
         });
         listStateBuilder.query(event.getStackOverflowQuery());
-
-        stackOverflowApi.query(event.getStackOverflowQuery().getMappedQuery(), getUpdateListCallback());
+        nextPage = 1;
+        loadDataToList(event.getStackOverflowQuery());
     }
 
-    private Callback<StackOverflowApi.QueryResult> getUpdateListCallback() {
-        return new Callback<StackOverflowApi.QueryResult>() {
+    private void refreshList(final SearchEvent.StackOverflowQuery query) {
+        nextPage = 1;
+        stackOverflowApi.query(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.QueryResult>() {
             @Override
-            public void success(StackOverflowApi.QueryResult queryResult, Response response) {
-                List<QuestionListAdapter.QuestionAdapterData> resultsData = Lists.newArrayList(Lists.transform(queryResult.getQuestions(), new Function<StackOverflowApi.Question, QuestionListAdapter.QuestionAdapterData>() {
-                    @Override
-                    public QuestionListAdapter.QuestionAdapterData apply(StackOverflowApi.Question input) {
-                        QuestionListAdapter.QuestionAdapterData questionAdapterData = new QuestionListAdapter.QuestionAdapterData();
-                        questionAdapterData.setQuestionId(input.getQuestionId());
-                        questionAdapterData.setTitle(input.getTitle());
-                        questionAdapterData.setLink(input.getLink());
-                        questionAdapterData.setVotes(input.getVotes());
-                        questionAdapterData.setAnswers(input.getAnswers());
-                        questionAdapterData.setViews(input.getViews());
-                        questionAdapterData.setAnswered(input.getAnswered());
-                        questionAdapterData.setCreationDate(input.getCreationDate());
-                        questionAdapterData.setTags(input.getTags());
-                        questionAdapterData.setOwnerDisplayName(input.getOwner().getDisplayName());
-                        questionAdapterData.setOwnerProfileImageUrl(input.getOwner().getProfileImageUrl());
+            public void success(final StackOverflowApi.QueryResult queryResult, Response response) {
+                questionList = getAdapterData(queryResult.getQuestions());
+                listStateBuilder.results(questionList);
 
-                        Question found = questionService.where().equalTo("questionId", input.getQuestionId()).findFirst();
-                        questionAdapterData.setVisited(found != null);
-                        return questionAdapterData;
-                    }
-                }));
-                listStateBuilder.results(resultsData);
-
-                list.setAdapter(new QuestionListAdapter(getActivity(), resultsData));
+                list.setAdapter(new QuestionListAdapter(getActivity(), questionList));
+                if (queryResult.getHasMore()) {
+                    list.setOnScrollListener(createOnScrollListener(query));
+                } else {
+                    list.setOnScrollListener(null);
+                    nextPage = -1;
+                }
                 swipeRefresh.setRefreshing(false);
             }
 
@@ -202,6 +184,93 @@ public class ListFragment extends Fragment {
                 Toast.makeText(getActivity(), "Error: " + error.toString(), Toast.LENGTH_SHORT).show();
                 swipeRefresh.setRefreshing(false);
             }
+        });
+
+        new Handler().postDelayed(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        if (swipeRefresh.isRefreshing()) {
+                            swipeRefresh.setRefreshing(false);
+                        }
+                    }
+                },
+                timeoutMillisec);
+    }
+
+    private void loadDataToList(final SearchEvent.StackOverflowQuery query) {
+        if (isLoading) {
+            return;
+        }
+        isLoading = true;
+        stackOverflowApi.query(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.QueryResult>() {
+            @Override
+            public void success(StackOverflowApi.QueryResult queryResult, Response response) {
+                List<QuestionListAdapter.QuestionAdapterData> receivedQuestions = getAdapterData(queryResult.getQuestions());
+                listStateBuilder.results(Lists.newArrayList(Iterables.concat(listStateBuilder.build().results(), receivedQuestions)));
+                if (questionList == null) {
+                    questionList = receivedQuestions;
+                    list.setAdapter(new QuestionListAdapter(getActivity(), questionList));
+                    if (queryResult.getHasMore()) {
+                        list.setOnScrollListener(createOnScrollListener(query));
+                    } else {
+                        list.setOnScrollListener(null);
+                        nextPage = -1;
+                    }
+                } else {
+                    questionList.addAll(receivedQuestions);
+                    ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
+                }
+                swipeRefresh.setRefreshing(false);
+                isLoading = false;
+            }
+
+            @Override
+            public void failure(RetrofitError error) {
+                Toast.makeText(getActivity(), "Error: " + error.toString(), Toast.LENGTH_SHORT).show();
+                swipeRefresh.setRefreshing(false);
+                isLoading = false;
+            }
+        });
+    }
+
+    private AbsListView.OnScrollListener createOnScrollListener(final SearchEvent.StackOverflowQuery query) {
+        return new AbsListView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+
+            }
+
+            @Override
+            public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+                if (view.getLastVisiblePosition() > view.getAdapter().getCount() * 0.7) {
+                    loadDataToList(query);
+                }
+            }
         };
+    }
+
+    private ArrayList<QuestionListAdapter.QuestionAdapterData> getAdapterData(List<StackOverflowApi.Question> questions) {
+        return Lists.newArrayList(Lists.transform(questions, new Function<StackOverflowApi.Question, QuestionListAdapter.QuestionAdapterData>() {
+            @Override
+            public QuestionListAdapter.QuestionAdapterData apply(StackOverflowApi.Question input) {
+                QuestionListAdapter.QuestionAdapterData questionAdapterData = new QuestionListAdapter.QuestionAdapterData();
+                questionAdapterData.setQuestionId(input.getQuestionId());
+                questionAdapterData.setTitle(input.getTitle());
+                questionAdapterData.setLink(input.getLink());
+                questionAdapterData.setVotes(input.getVotes());
+                questionAdapterData.setAnswers(input.getAnswers());
+                questionAdapterData.setViews(input.getViews());
+                questionAdapterData.setAnswered(input.getAnswered());
+                questionAdapterData.setCreationDate(input.getCreationDate());
+                questionAdapterData.setTags(input.getTags());
+                questionAdapterData.setOwnerDisplayName(input.getOwner().getDisplayName());
+                questionAdapterData.setOwnerProfileImageUrl(input.getOwner().getProfileImageUrl());
+
+                Question found = questionService.where().equalTo("questionId", input.getQuestionId()).findFirst();
+                questionAdapterData.setVisited(found != null);
+                return questionAdapterData;
+            }
+        }));
     }
 }

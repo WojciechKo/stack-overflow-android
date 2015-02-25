@@ -8,16 +8,20 @@ import java.util.Map;
 
 import retrofit.Callback;
 import retrofit.http.GET;
+import retrofit.http.Query;
 import retrofit.http.QueryMap;
 
 public interface StackOverflowApi {
 
-    @GET("/search?site=stackoverflow")
-    void query(@QueryMap Map<String, String> queryMap, Callback<QueryResult> callback);
+    @GET("/search?site=stackoverflow&pagesize=4")
+    void query(@QueryMap Map<String, String> queryMap, @Query("page") int page, Callback<QueryResult> callback);
 
     public static class QueryResult {
         @SerializedName("items")
         private List<Question> questions;
+
+        @SerializedName("has_more")
+        private Boolean hasMore;
 
         public List<Question> getQuestions() {
             return questions;
@@ -25,6 +29,15 @@ public interface StackOverflowApi {
 
         public QueryResult setQuestions(List<Question> questions) {
             this.questions = questions;
+            return this;
+        }
+
+        public Boolean getHasMore() {
+            return hasMore;
+        }
+
+        public QueryResult setHasMore(Boolean hasMore) {
+            this.hasMore = hasMore;
             return this;
         }
     }
