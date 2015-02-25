@@ -157,8 +157,7 @@ public class ListFragment extends Fragment {
             }
         });
         listStateBuilder.query(event.getStackOverflowQuery());
-        nextPage = 1;
-        loadDataToList(event.getStackOverflowQuery());
+        refreshList(event.getStackOverflowQuery());
     }
 
     private void refreshList(final SearchEvent.StackOverflowQuery query) {
