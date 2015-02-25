@@ -182,6 +182,17 @@ public interface StackOverflowApi {
         }
     }
 
+    public static class ErrorResponse {
+        @SerializedName("error_id")
+        public String errorId;
+
+        @SerializedName("error_message")
+        public String errorMsg;
+
+        @SerializedName("error_name")
+        public String errorName;
+    }
+
     enum SortBy {
         ACTIVITY,
         CREATION,

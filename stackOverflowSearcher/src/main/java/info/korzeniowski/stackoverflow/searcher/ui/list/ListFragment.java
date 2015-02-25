@@ -18,6 +18,8 @@ import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.otto.Bus;
 import com.squareup.otto.Subscribe;
@@ -40,6 +42,7 @@ import info.korzeniowski.stackoverflow.searcher.ui.details.DetailsActivity;
 import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
+import retrofit.mime.TypedByteArray;
 
 public class ListFragment extends Fragment {
     private static final String LIST_DATA = "LIST_DATA";
@@ -180,7 +183,15 @@ public class ListFragment extends Fragment {
 
             @Override
             public void failure(RetrofitError error) {
-                Toast.makeText(getActivity(), "Error: " + error.toString(), Toast.LENGTH_SHORT).show();
+                String json =  new String(((TypedByteArray)error.getResponse().getBody()).getBytes());
+                String message = "";
+                try {
+                    StackOverflowApi.ErrorResponse response = new Gson().fromJson(json, StackOverflowApi.ErrorResponse.class);
+                    message = response.errorMsg;
+                } catch (JsonSyntaxException e) {
+                    message = error.getMessage();
+                }
+                Toast.makeText(getActivity(), "Error: " + message, Toast.LENGTH_SHORT).show();
                 swipeRefresh.setRefreshing(false);
             }
         });
