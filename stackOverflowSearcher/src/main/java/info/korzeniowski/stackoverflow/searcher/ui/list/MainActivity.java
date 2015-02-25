@@ -18,16 +18,23 @@ import butterknife.InjectView;
 import butterknife.OnClick;
 import info.korzeniowski.stackoverflow.searcher.App;
 import info.korzeniowski.stackoverflow.searcher.R;
-import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
+
+import static info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi.OrderType;
+import static info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi.SortBy;
 
 public class MainActivity extends FragmentActivity {
-    private final String STATE_SORT_BY = "STATE_SORT_BY";
+    private static final String STATE_SORT_BY = "STATE_SORT_BY";
+    private static final String STATE_ORDER = "STATE_ORDER";
 
     @InjectView(R.id.query)
     EditText query;
 
     @InjectView(R.id.sortBy)
     Spinner sortBy;
+
+    @InjectView(R.id.order)
+    Spinner order;
+
     @Inject
     Bus bus;
 
@@ -45,18 +52,28 @@ public class MainActivity extends FragmentActivity {
                     .commit();
         }
 
-        StackOverflowApi.SortBy[] sortByValues = StackOverflowApi.SortBy.values();
-        ArrayAdapter<StackOverflowApi.SortBy> adapter = new ArrayAdapter<>(
+        SortBy[] sortByValues = SortBy.values();
+        ArrayAdapter<SortBy> sortAdapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_list_item_1,
                 android.R.id.text1,
                 sortByValues);
-        sortBy.setAdapter(adapter);
+        sortBy.setAdapter(sortAdapter);
+
+        OrderType[] orderTypeValues = OrderType.values();
+        ArrayAdapter<OrderType> orderAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_list_item_1,
+                android.R.id.text1,
+                orderTypeValues);
+        order.setAdapter(orderAdapter);
 
         if (savedInstanceState == null) {
-            sortBy.setSelection(Arrays.asList(StackOverflowApi.SortBy.values()).indexOf(StackOverflowApi.SortBy.CREATION));
+            sortBy.setSelection(Arrays.asList(SortBy.values()).indexOf(SortBy.CREATION));
+            order.setSelection(Arrays.asList(OrderType.values()).indexOf(OrderType.DESC));
         } else {
             sortBy.setSelection(savedInstanceState.getInt(STATE_SORT_BY));
+            order.setSelection(savedInstanceState.getInt(STATE_ORDER));
         }
     }
 
@@ -64,6 +81,7 @@ public class MainActivity extends FragmentActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt(STATE_SORT_BY, sortBy.getSelectedItemPosition());
+        outState.putInt(STATE_ORDER, order.getSelectedItemPosition());
     }
 
     @OnClick(R.id.search)
@@ -77,7 +95,8 @@ public class MainActivity extends FragmentActivity {
         bus.post(new SearchEvent(SearchEvent.StackOverflowQuery
                 .builder()
                 .intitle(query.getText().toString())
-                .sort(StackOverflowApi.SortBy.values()[sortBy.getSelectedItemPosition()])
+                .sort(SortBy.values()[sortBy.getSelectedItemPosition()])
+                .order(OrderType.values()[order.getSelectedItemPosition()])
                 .build()));
     }
 }
