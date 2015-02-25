@@ -28,6 +28,7 @@ import info.korzeniowski.stackoverflow.searcher.model.QuestionService;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
 import info.korzeniowski.stackoverflow.searcher.ui.list.ListFragment;
 import info.korzeniowski.stackoverflow.searcher.ui.list.MainActivity;
+import info.korzeniowski.stackoverflow.searcher.ui.list.SearchFragment;
 import info.korzeniowski.stackoverflow.searcher.util.Utils;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
@@ -37,7 +38,8 @@ import retrofit.converter.GsonConverter;
 @Module(
         injects = {
                 MainActivity.class,
-                ListFragment.class
+                ListFragment.class,
+                SearchFragment.class
         }
 )
 public class MyModule {
