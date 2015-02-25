@@ -79,7 +79,7 @@ public class SimpleTest {
 
         // then
         ArgumentCaptor<Map> arg = ArgumentCaptor.forClass(Map.class);
-        Mockito.verify(mockRestApi, times(1)).query(arg.capture(), any(Callback.class));
+        Mockito.verify(mockRestApi, times(1)).query(arg.capture(), any(Integer.class), any(Callback.class));
         assertThat(arg.getValue()).contains(MapEntry.entry("intitle", queryString));
     }
 
@@ -103,7 +103,7 @@ public class SimpleTest {
             }
         })
                 .when(mockRestApi)
-                .query(any(Map.class), any(Callback.class));
+                .query(any(Map.class), any(Integer.class), any(Callback.class));
 
         // when
         search.performClick();
