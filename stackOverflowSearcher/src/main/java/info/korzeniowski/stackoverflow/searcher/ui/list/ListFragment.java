@@ -165,7 +165,7 @@ public class ListFragment extends Fragment {
 
     private void refreshList(final SearchEvent.StackOverflowQuery query) {
         nextPage = 1;
-        stackOverflowApi.query(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.QueryResult>() {
+        stackOverflowApi.search(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.QueryResult>() {
             @Override
             public void success(final StackOverflowApi.QueryResult queryResult, Response response) {
                 questionList = getAdapterData(queryResult.getQuestions());
@@ -205,7 +205,7 @@ public class ListFragment extends Fragment {
             return;
         }
         isLoading = true;
-        stackOverflowApi.query(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.QueryResult>() {
+        stackOverflowApi.search(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.QueryResult>() {
             @Override
             public void success(StackOverflowApi.QueryResult queryResult, Response response) {
                 List<QuestionListAdapter.QuestionAdapterData> receivedQuestions = getAdapterData(queryResult.getQuestions());
