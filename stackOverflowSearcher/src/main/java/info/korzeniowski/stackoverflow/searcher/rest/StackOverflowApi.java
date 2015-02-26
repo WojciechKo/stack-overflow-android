@@ -13,8 +13,8 @@ import retrofit.http.QueryMap;
 
 public interface StackOverflowApi {
 
-    @GET("/search?site=stackoverflow&pagesize=4")
-    void query(@QueryMap Map<String, String> queryMap, @Query("page") int page, Callback<QueryResult> callback);
+    @GET("/search?site=stackoverflow&pagesize=20")
+    void search(@QueryMap Map<String, String> queryMap, @Query("page") int page, Callback<QueryResult> callback);
 
     public static class QueryResult {
         @SerializedName("items")
