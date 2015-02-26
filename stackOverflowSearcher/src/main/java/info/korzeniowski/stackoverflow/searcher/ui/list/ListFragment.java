@@ -99,7 +99,7 @@ public class ListFragment extends Fragment {
 
             nextPage = savedInstanceState.getInt(NEXT_PAGE);
             if (nextPage > 0) {
-                list.setOnScrollListener(createOnScrollListener(listState.query()));
+                list.setOnScrollListener(newOnScrollListener(listState.query()));
             }
 
             swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -173,26 +173,18 @@ public class ListFragment extends Fragment {
 
                 list.setAdapter(new QuestionListAdapter(getActivity(), questionList));
                 if (queryResult.getHasMore()) {
-                    list.setOnScrollListener(createOnScrollListener(query));
+                    list.setOnScrollListener(newOnScrollListener(query));
                 } else {
                     list.setOnScrollListener(null);
                     nextPage = -1;
                 }
                 swipeRefresh.setRefreshing(false);
+                Toast.makeText(getActivity(), "Total: " + list.getCount() + "\nNew: " + queryResult.getQuestions().size(), Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void failure(RetrofitError error) {
-                String json =  new String(((TypedByteArray)error.getResponse().getBody()).getBytes());
-                String message = "";
-                try {
-                    StackOverflowApi.ErrorResponse response = new Gson().fromJson(json, StackOverflowApi.ErrorResponse.class);
-                    message = response.errorMsg;
-                } catch (JsonSyntaxException e) {
-                    message = error.getMessage();
-                }
-                Toast.makeText(getActivity(), "Error: " + message, Toast.LENGTH_SHORT).show();
-                swipeRefresh.setRefreshing(false);
+                handleFailure(error);
             }
         });
 
@@ -222,7 +214,7 @@ public class ListFragment extends Fragment {
                     questionList = receivedQuestions;
                     list.setAdapter(new QuestionListAdapter(getActivity(), questionList));
                     if (queryResult.getHasMore()) {
-                        list.setOnScrollListener(createOnScrollListener(query));
+                        list.setOnScrollListener(newOnScrollListener(query));
                     } else {
                         list.setOnScrollListener(null);
                         nextPage = -1;
@@ -231,20 +223,33 @@ public class ListFragment extends Fragment {
                     questionList.addAll(receivedQuestions);
                     ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
                 }
+                Toast.makeText(getActivity(), "Total: " + list.getCount() + "\nNew: " + queryResult.getQuestions().size(), Toast.LENGTH_SHORT).show();
                 swipeRefresh.setRefreshing(false);
                 isLoading = false;
             }
 
             @Override
             public void failure(RetrofitError error) {
-                Toast.makeText(getActivity(), "Error: " + error.toString(), Toast.LENGTH_SHORT).show();
-                swipeRefresh.setRefreshing(false);
+                handleFailure(error);
                 isLoading = false;
             }
         });
     }
 
-    private AbsListView.OnScrollListener createOnScrollListener(final SearchEvent.StackOverflowQuery query) {
+    private void handleFailure(RetrofitError error) {
+        String json =  new String(((TypedByteArray)error.getResponse().getBody()).getBytes());
+        String message = "";
+        try {
+            StackOverflowApi.ErrorResponse response = new Gson().fromJson(json, StackOverflowApi.ErrorResponse.class);
+            message = response.errorMsg;
+        } catch (JsonSyntaxException e) {
+            message = error.getMessage();
+        }
+        Toast.makeText(getActivity(), "Error: " + message, Toast.LENGTH_SHORT).show();
+        swipeRefresh.setRefreshing(false);
+    }
+
+    private AbsListView.OnScrollListener newOnScrollListener(final SearchEvent.StackOverflowQuery query) {
         return new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -253,7 +258,7 @@ public class ListFragment extends Fragment {
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                if (view.getLastVisiblePosition() > view.getAdapter().getCount() * 0.7) {
+                if (view.getLastVisiblePosition() > view.getAdapter().getCount() - 40) {
                     loadDataToList(query);
                 }
             }
