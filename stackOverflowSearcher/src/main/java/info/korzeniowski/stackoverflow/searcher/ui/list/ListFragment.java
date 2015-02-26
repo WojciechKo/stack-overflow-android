@@ -185,19 +185,9 @@ public class ListFragment extends Fragment {
             @Override
             public void failure(RetrofitError error) {
                 handleFailure(error);
+                swipeRefresh.setRefreshing(false);
             }
         });
-
-        new Handler().postDelayed(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        if (swipeRefresh.isRefreshing()) {
-                            swipeRefresh.setRefreshing(false);
-                        }
-                    }
-                },
-                timeoutMillisec);
     }
 
     private void loadDataToList(final SearchEvent.StackOverflowQuery query) {
