@@ -1,40 +1,16 @@
 package info.korzeniowski.stackoverflow.searcher.ui.list;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.Typeface;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.Html;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.style.BackgroundColorSpan;
-import android.text.style.ForegroundColorSpan;
-import android.text.style.ImageSpan;
-import android.text.style.StyleSpan;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.ImageView;
-import android.widget.TextView;
-
-import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import butterknife.ButterKnife;
-import butterknife.InjectView;
-import info.korzeniowski.stackoverflow.searcher.R;
-
-import static info.korzeniowski.stackoverflow.searcher.util.Utils.dipToPixels;
 
 public class QuestionListAdapter extends BaseAdapter {
 
@@ -63,109 +39,25 @@ public class QuestionListAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ViewHolder holder;
-
-        if (convertView == null) {
-            convertView = LayoutInflater.from(context).inflate(R.layout.question_item, parent, false);
-            holder = new ViewHolder();
-            ButterKnife.inject(holder, convertView);
-            convertView.setTag(holder);
-        } else {
-            holder = (ViewHolder) convertView.getTag();
-        }
-
         QuestionAdapterData item = getItem(position);
-        holder.title.setText(Html.fromHtml(item.getTitle()));
-        holder.date.setText(getDateText(item));
-        holder.authorName.setText(item.getOwnerDisplayName());
-        holder.vote.setText(item.getVotes().toString());
-
-        SpannableStringBuilder answerText = new SpannableStringBuilder(item.getAnswers().toString());
-        if (item.getAnswered()) {
-            answerText.replace(0, 0, " ");
-            answerText.append(" ");
-            answerText.setSpan(new BackgroundColorSpan(Color.parseColor("#75845c")), 0, answerText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            answerText.setSpan(new ForegroundColorSpan(Color.WHITE), 0, answerText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            answerText.setSpan(new StyleSpan(Typeface.BOLD), 0, answerText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        QuestionListItemView view = (QuestionListItemView) convertView;
+        if (view == null) {
+            view = new QuestionListItemView(context);
         }
-        holder.answer.setText(answerText);
-        holder.views.setText(item.getViews().toString());
 
-        Picasso.with(context).load(item.getOwnerProfileImageUrl()).placeholder(R.drawable.ic_contact_picture).into(holder.profileImage);
+        view.setTitle(item.getTitle());
+        view.setDate(item.getCreationDate());
+        view.setAuthorName(item.getOwnerDisplayName());
+        view.setVote(item.getVotes());
+        view.setAnswer(item.getAnswers());
+        view.setAnswered(item.getAnswered());
+        view.setViews(item.getViews());
+        view.setProfileImage(item.getOwnerProfileImageUrl());
+        view.setTag(item.getTags());
+        view.setVisited(item.getVisited());
+        view.setTags(item.getTags());
 
-        SpannableStringBuilder tagStringBuilder = new SpannableStringBuilder();
-        for (String tag : item.getTags()) {
-            ImageSpan imageSpan = new ImageSpan(getImageSpanForTag(tag));
-            tagStringBuilder.append(tag);
-            tagStringBuilder.setSpan(imageSpan, tagStringBuilder.length() - tag.length(), tagStringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            tagStringBuilder.append(" ");
-        }
-        holder.tags.setText(tagStringBuilder);
-        holder.title.setTypeface(null, item.getVisited() ? Typeface.NORMAL : Typeface.BOLD);
-
-        return convertView;
-    }
-
-    private String getDateText(QuestionAdapterData item) {
-        return android.text.format.DateFormat.getTimeFormat(context).format(item.getCreationDate())
-                + "\n"
-                + android.text.format.DateFormat.getDateFormat(context).format(item.getCreationDate());
-    }
-
-    private BitmapDrawable getImageSpanForTag(String tagName) {
-        // creating textview dynamically
-        final TextView tv = new TextView(context);
-        tv.setText(tagName);
-        tv.setTextSize(35);
-        Drawable drawable = context.getResources().getDrawable(R.drawable.oval);
-        drawable.setColorFilter(Color.parseColor("#e4edf4"), PorterDuff.Mode.SRC);
-        tv.setBackground(drawable);
-        tv.setTextColor(Color.parseColor("#3e6d8e"));
-        tv.setPadding(dipToPixels(context, 15), 0, dipToPixels(context, 15), dipToPixels(context, 1));
-
-        // convert View to Drawable
-        int spec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
-        tv.measure(spec, spec);
-        tv.layout(0, 0, tv.getMeasuredWidth(), tv.getMeasuredHeight());
-        Bitmap b = Bitmap.createBitmap(tv.getMeasuredWidth(), tv.getMeasuredHeight(), Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(b);
-        c.translate(-tv.getScrollX(), -tv.getScrollY());
-        tv.draw(c);
-        tv.setDrawingCacheEnabled(true);
-        Bitmap cacheBmp = tv.getDrawingCache();
-        Bitmap viewBmp = cacheBmp.copy(Bitmap.Config.ARGB_8888, true);
-        tv.destroyDrawingCache();
-
-        BitmapDrawable bitmapDrawable = new BitmapDrawable(viewBmp);
-        bitmapDrawable.setBounds(0, 0, bitmapDrawable.getIntrinsicWidth(), bitmapDrawable.getIntrinsicHeight());
-
-        return bitmapDrawable;
-    }
-
-    public static class ViewHolder {
-        @InjectView(R.id.title)
-        TextView title;
-
-        @InjectView(R.id.vote)
-        TextView vote;
-
-        @InjectView(R.id.answer)
-        TextView answer;
-
-        @InjectView(R.id.views)
-        TextView views;
-
-        @InjectView(R.id.date)
-        TextView date;
-
-        @InjectView(R.id.tags)
-        TextView tags;
-
-        @InjectView(R.id.profileImage)
-        ImageView profileImage;
-
-        @InjectView(R.id.authorName)
-        TextView authorName;
+        return view;
     }
 
     public static class QuestionAdapterData implements Parcelable {
@@ -344,7 +236,7 @@ public class QuestionListAdapter extends BaseAdapter {
         }
 
         public QuestionAdapterData setTitle(String title) {
-            this.title = title;
+            this.title = Html.fromHtml(title).toString();
             return this;
         }
 

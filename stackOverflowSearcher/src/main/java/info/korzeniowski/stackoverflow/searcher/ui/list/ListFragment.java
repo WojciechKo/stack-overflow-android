@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -31,7 +32,6 @@ import javax.inject.Inject;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
-import butterknife.OnItemClick;
 import info.korzeniowski.stackoverflow.searcher.App;
 import info.korzeniowski.stackoverflow.searcher.R;
 import info.korzeniowski.stackoverflow.searcher.model.QuestionService;
@@ -131,7 +131,6 @@ public class ListFragment extends Fragment {
         questionService.close();
     }
 
-    @OnItemClick(R.id.list)
     public void onListItemClicked(int position) {
         QuestionListAdapter.QuestionAdapterData item = (QuestionListAdapter.QuestionAdapterData) list.getAdapter().getItem(position);
         questionService.read(item.getQuestionId());
