@@ -6,7 +6,7 @@ Build with:
 - [OkHttp](http://square.github.io/okhttp/) 1.3.6  
 - [Retrofit](http://square.github.io/retrofit/) 1.9.0  
 - [Dagger](http://google.github.io/dagger/) 2.0-SNAPSHOT  
-- [Robolectric](http://robolectric.org/)] 3.0-SNAPSHOT  
+- [Robolectric](http://robolectric.org/) 3.0-SNAPSHOT  
 - [Gradle plugin](http://tools.android.com/tech-docs/new-build-system) 1.1.3  
 
 
