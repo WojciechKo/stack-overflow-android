@@ -7,13 +7,10 @@ import io.realm.Realm;
 public class QuestionService {
     private static Realm realm;
 
-    public static QuestionService get(Context context) {
-        realm = Realm.getInstance(context);
-        return new QuestionService(realm);
-    }
-
-    private QuestionService(Realm realm) {
-        this.realm = realm;
+    public QuestionService(Context context) {
+        if (realm == null) {
+            realm = Realm.getInstance(context);
+        }
     }
 
     public void close() {

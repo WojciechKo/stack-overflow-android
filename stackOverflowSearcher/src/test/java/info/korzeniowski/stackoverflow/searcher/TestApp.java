@@ -1,36 +1,32 @@
 package info.korzeniowski.stackoverflow.searcher;
 
-import com.google.common.collect.Iterables;
+import javax.inject.Singleton;
 
-import java.util.List;
+import dagger.Component;
 
-import dagger.ObjectGraph;
+public class TestApp extends App {
 
-public class TestApp extends info.korzeniowski.stackoverflow.searcher.App {
-
-    private List<Object> modules;
+    @Singleton
+    @Component(
+            modules = {
+                    MainModule.class,
+                    MockDatabaseModule.class,
+                    HttpClientModule.class,
+                    MockStackOverflowModule.class
+            })
+    public interface TestApplicationComponent extends ApplicationComponent {
+        void inject(SimpleTest object);
+    }
 
     @Override
-    protected List<Object> getModules() {
-        if (modules == null) {
-            modules = super.getModules();
-            modules.add(new MockRetrofitModule());
-        }
-        return modules;
+    public void onCreate() {
+        // Android Studio doesn't see this Class
+        component = Dagger_TestApp_TestApplicationComponent.builder()
+                .mainModule(new MainModule(this))
+                .build();
     }
 
-    public void addModules(Object module) {
-        getModules().add(module);
-        graph = ObjectGraph.create(getModules().toArray());
-    }
-
-    public void removeModule(final Class<?> moduleClass) {
-        Iterables.removeIf(modules, new com.google.common.base.Predicate<Object>() {
-            @Override
-            public boolean apply(Object input) {
-                return input.getClass().equals(moduleClass);
-            }
-        });
-        graph = ObjectGraph.create(getModules().toArray());
+    public TestApplicationComponent component() {
+        return (TestApplicationComponent) component;
     }
 }

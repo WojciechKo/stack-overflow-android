@@ -14,7 +14,7 @@ public class MainActivity extends FragmentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.inject(this);
-        ((App) getApplication()).inject(this);
+        ((App) getApplication()).component().inject(this);
 
         if (savedInstanceState == null) {
             getSupportFragmentManager()

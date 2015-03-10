@@ -42,7 +42,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 
-@RunWith(RobolectricTestRunner.class)
+@RunWith(MyRobolectricTestRunner.class)
 public class SimpleTest {
 
     private Activity activity;
@@ -61,8 +61,7 @@ public class SimpleTest {
 
     @Before
     public void setUp() {
-        ((TestApp) RuntimeEnvironment.application.getApplicationContext()).addModules(MockRetrofitModule.class);
-        ((TestApp) RuntimeEnvironment.application.getApplicationContext()).inject(this);
+        ((TestApp) RuntimeEnvironment.application).component().inject(this);
 
         activity = Robolectric.buildActivity(MainActivity.class).create().start().resume().get();
         ButterKnife.inject(this, activity);

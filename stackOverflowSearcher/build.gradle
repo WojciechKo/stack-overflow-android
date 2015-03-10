@@ -1,13 +1,12 @@
 buildscript {
     repositories {
-        jcenter()
-        maven {url 'https://oss.sonatype.org/content/repositories/snapshots/'}
+        mavenCentral()
+        maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
     }
 
     dependencies {
         classpath "com.neenbedankt.gradle.plugins:android-apt:1.4"
-        classpath 'com.android.tools.build:gradle:1.0.1'
-        classpath 'com.github.jcandksolutions.gradle:android-unit-test:2.1.1'
+        classpath 'org.robolectric:robolectric-gradle-plugin:1.0.1'
     }
 }
 
@@ -35,10 +34,6 @@ android {
         exclude 'META-INF/NOTICE'
         exclude 'META-INF/LICENSE.txt'
         exclude 'META-INF/services/javax.annotation.processing.Processor'
-    }
-
-    sourceSets {
-        androidTest.setRoot('src/test')
     }
 
     signingConfigs {
@@ -69,23 +64,21 @@ apt {
     }
 }
 
-apply plugin: 'android-unit-test'
+apply plugin: 'org.robolectric'
 
-androidUnitTest {
-    downloadDependenciesSources true
-    downloadDependenciesJavadoc true
-    downloadTestDependenciesSources true
-    downloadTestDependenciesJavadoc true
+robolectric {
+    include '**/*Test.class'
+    exclude '**/espresso/**/*.class'
 
-    testTasks {
-        all {
-            //Allows to run tests in parallel by specifying how many threads to run tests on.
-            maxParallelForks = 4
-            //Allow to group a number of tests for each thread to run.
-            forkEvery = 5
-            minHeapSize = '128m'
-            maxHeapSize = '1024m'
-        }
+    maxHeapSize = '2048m'
+    jvmArgs '-XX:MaxPermSize=512m', '-XX:-UseSplitVerifier'
+
+    maxParallelForks = 4
+    forkEvery = 150
+    ignoreFailures true
+
+    afterTest { descriptor, result ->
+        println "Executing test for ${descriptor.name} with result: ${result.resultType}"
     }
 }
 
@@ -102,7 +95,7 @@ dependencies {
     compile 'com.google.guava:guava:18.0'
 
     // Butter Knife
-    compile 'com.jakewharton:butterknife:5.1.2'
+    compile 'com.jakewharton:butterknife:6.1.0'
 
     // Picasso
     compile 'com.squareup.picasso:picasso:2.5.0'
@@ -122,13 +115,15 @@ dependencies {
     apt "com.github.frankiesardo:auto-parcel-processor:$autoParcelVersion"
 
     // Dagger
-    def daggerVersion = '1.2.+'
-    apt "com.squareup.dagger:dagger-compiler:$daggerVersion"
-    compile "com.squareup.dagger:dagger:$daggerVersion"
-    testCompile "com.squareup.dagger:dagger-compiler:$daggerVersion"
+    def daggerVersion = '2.0-SNAPSHOT'
+    apt "com.google.dagger:dagger-compiler:$daggerVersion"
+    testCompile "com.google.dagger:dagger-compiler:$daggerVersion"
+    compile "com.google.dagger:dagger:$daggerVersion"
+    testCompile "com.google.dagger:dagger-compiler:$daggerVersion"
+    provided 'org.glassfish:javax.annotation:10.0-b28'
 
     // JUnit
-    testCompile 'junit:junit:4.11'
+    testCompile 'junit:junit:4.12'
 
     // Mockito
     testCompile 'org.mockito:mockito-core:1.9.5'
@@ -140,4 +135,42 @@ dependencies {
 
     //Fest Android
     testCompile 'com.squareup:fest-android:1.0.8'
+}
+
+apply plugin: "jacoco"
+
+jacoco {
+    toolVersion = "0.7.1.201405082137"
+}
+
+def coverageSourceDirs = [
+        'src/main/java',
+        'src/gen'
+]
+
+task jacocoTestReport(type: JacocoReport, dependsOn: "testDebug") {
+    group = "Reporting"
+    description = "Generate Jacoco coverage reports after running tests."
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+    classDirectories = fileTree(
+            dir: './build/intermediates/classes/debug',
+            excludes: ['**/R.class',
+                       '**/R$*.class',
+                       '**/*$InjectAdapter.class',
+                       '**/*$ModuleAdapter.class',
+                       '**/*$ViewInjector*.class'
+            ])
+    sourceDirectories = files(coverageSourceDirs)
+    executionData = files('build/jacoco/testDebug.exec')
+}
+
+apply plugin: 'idea'
+
+idea {
+    module {
+        downloadSources = true
+    }
 }

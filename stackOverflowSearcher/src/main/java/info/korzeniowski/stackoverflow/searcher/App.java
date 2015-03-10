@@ -2,29 +2,49 @@ package info.korzeniowski.stackoverflow.searcher;
 
 import android.app.Application;
 
-import java.util.ArrayList;
-import java.util.List;
+import javax.inject.Singleton;
 
-import dagger.ObjectGraph;
+import dagger.Component;
+import info.korzeniowski.stackoverflow.searcher.model.DatabaseModule;
+import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowModule;
+import info.korzeniowski.stackoverflow.searcher.ui.list.ListFragment;
+import info.korzeniowski.stackoverflow.searcher.ui.list.MainActivity;
+import info.korzeniowski.stackoverflow.searcher.ui.list.SearchFragment;
 
 public class App extends Application {
 
-    protected ObjectGraph graph;
+    ApplicationComponent component;
+
+    @Singleton
+    @Component(
+            modules = {
+                    MainModule.class,
+                    DatabaseModule.class,
+                    HttpClientModule.class,
+                    StackOverflowModule.class
+            })
+    public interface ApplicationComponentImpl extends ApplicationComponent {
+
+    }
+
+    public interface ApplicationComponent {
+        void inject(MainActivity object);
+
+        void inject(ListFragment object);
+
+        void inject(SearchFragment object);
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
-        graph = ObjectGraph.create(getModules().toArray());
+        component = Dagger_App_ApplicationComponentImpl.builder()
+                .mainModule(new MainModule(this))
+                .build();
     }
 
-    public void inject(Object object) {
-        graph.inject(object);
-    }
-
-    protected List<Object> getModules() {
-        List<Object> modules = new ArrayList<Object>();
-        modules.add(new MyModule(this));
-        return modules;
+    public ApplicationComponent component() {
+        return component;
     }
 }
 

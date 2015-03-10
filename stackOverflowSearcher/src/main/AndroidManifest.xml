@@ -32,8 +32,5 @@
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value=".ui.list.MainActivity"/>
         </activity>
-
     </application>
-    <uses-permission android:name="android.permission.INTERNET"/>
-
 </manifest>

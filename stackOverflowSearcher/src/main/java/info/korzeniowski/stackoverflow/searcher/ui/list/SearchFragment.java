@@ -49,7 +49,7 @@ public class SearchFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ((App) getActivity().getApplication()).inject(this);
+        ((App) getActivity().getApplication()).component().inject(this);
     }
 
     @Override
