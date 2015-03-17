@@ -10,15 +10,14 @@ import com.google.common.collect.Lists;
 
 import org.fest.assertions.data.MapEntry;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
-import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.Shadows;
 
@@ -33,12 +32,13 @@ import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
 import info.korzeniowski.stackoverflow.searcher.ui.details.DetailsActivity;
 import info.korzeniowski.stackoverflow.searcher.ui.list.MainActivity;
 import info.korzeniowski.stackoverflow.searcher.ui.list.QuestionListAdapter;
-import info.korzeniowski.stackoverflow.searcher.ui.list.SearchEvent;
+import info.korzeniowski.stackoverflow.searcher.ui.list.SearchFragment;
 import retrofit.Callback;
 
 import static org.fest.assertions.api.ANDROID.assertThat;
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 
@@ -68,29 +68,15 @@ public class SimpleTest {
     }
 
     @Test
-    public void shouldCallRestApiWithPassedText() {
+    public void shouldPopulateListWithWithRestApiData() {
         // given
-        String queryString = "query string";
-        query.setText(queryString);
-
-        // when
-        search.performClick();
-
-        // then
-        ArgumentCaptor<Map> arg = ArgumentCaptor.forClass(Map.class);
-        Mockito.verify(mockRestApi, times(1)).search(arg.capture(), any(Integer.class), any(Callback.class));
-        assertThat(arg.getValue()).contains(MapEntry.entry("intitle", queryString));
-    }
-
-    @Ignore("Robolectric nie przekazuje eventu do ListFragment.onSearchEvent()")
-    @Test
-    public void shouldPopulateList() {
-        // given
-        doAnswer(new Answer() {
+        String queryText = "simple query";
+        query.setText(queryText);
+        doAnswer(new Answer<Void>() {
             @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                Callback<StackOverflowApi.QueryResult> callback = (Callback<StackOverflowApi.QueryResult>) invocation.getArguments()[1];
-                StackOverflowApi.QueryResult result = new StackOverflowApi.QueryResult();
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                Callback<StackOverflowApi.SearchResult> callback = (Callback<StackOverflowApi.SearchResult>) invocation.getArguments()[2];
+                StackOverflowApi.SearchResult result = new StackOverflowApi.SearchResult();
                 result.setQuestions(
                         Lists.newArrayList(
                                 new StackOverflowApi.Question().setTitle("Topic 1"),
@@ -102,17 +88,21 @@ public class SimpleTest {
             }
         })
                 .when(mockRestApi)
-                .search(any(Map.class), any(Integer.class), any(Callback.class));
+                .search(anyMapOf(String.class, String.class), any(Integer.class), Matchers.<Callback<StackOverflowApi.SearchResult>>any());
 
         // when
         search.performClick();
 
         // then
+        ArgumentCaptor<Map> arg = ArgumentCaptor.forClass(Map.class);
+        Mockito.verify(mockRestApi, times(1)).search(arg.capture(), any(Integer.class), any(Callback.class));
+        assertThat(arg.getValue()).contains(MapEntry.entry(StackOverflowApi.SEARCH_QUERY_INTITLE, queryText));
+
         assertThat(list).hasCount(2);
     }
 
     @Test
-    public void shouldStartNextActivity() {
+    public void shouldStartDetailsActivity() {
         // given
         List<QuestionListAdapter.QuestionAdapterData> questions =
                 Lists.newArrayList(
@@ -135,18 +125,22 @@ public class SimpleTest {
     @Test
     public void shouldBuildMappedQuery() {
         // given
-        SearchEvent.StackOverflowQuery.Builder builder = SearchEvent.StackOverflowQuery.builder()
-                .order(StackOverflowApi.OrderType.ASC)
-                .sort(StackOverflowApi.SortBy.CREATION)
-                .intitle("intitle query");
+        String intitle = "intitle query";
+        StackOverflowApi.SortBy sort = StackOverflowApi.SortBy.CREATION;
+        StackOverflowApi.OrderType order = StackOverflowApi.OrderType.ASC;
+
+        SearchFragment.StackOverflowQuery.Builder builder = SearchFragment.StackOverflowQuery.builder()
+                .order(order)
+                .sort(sort)
+                .intitle(intitle);
 
         // when
-        SearchEvent.StackOverflowQuery query = builder.build();
+        SearchFragment.StackOverflowQuery query = builder.build();
 
         // then
         Map<String, String> mappedQuery = query.getMappedQuery();
-        assertThat(mappedQuery.get("order")).isEqualToIgnoringCase("asc");
-        assertThat(mappedQuery.get("sort")).isEqualToIgnoringCase("creation");
-        assertThat(mappedQuery.get("intitle")).isEqualToIgnoringCase("intitle query");
+        assertThat(mappedQuery.get(StackOverflowApi.SEARCH_QUERY_ORDER)).isEqualToIgnoringCase(order.toString());
+        assertThat(mappedQuery.get(StackOverflowApi.SEARCH_QUERY_SORT)).isEqualToIgnoringCase(sort.toString());
+        assertThat(mappedQuery.get(StackOverflowApi.SEARCH_QUERY_INTITLE)).isEqualToIgnoringCase(intitle);
     }
 }

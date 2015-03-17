@@ -2,7 +2,6 @@ package info.korzeniowski.stackoverflow.searcher.ui.list;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -35,7 +34,6 @@ import butterknife.InjectView;
 import butterknife.OnItemClick;
 import info.korzeniowski.stackoverflow.searcher.App;
 import info.korzeniowski.stackoverflow.searcher.R;
-import info.korzeniowski.stackoverflow.searcher.model.Question;
 import info.korzeniowski.stackoverflow.searcher.model.QuestionService;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
 import info.korzeniowski.stackoverflow.searcher.ui.details.DetailsActivity;
@@ -136,7 +134,7 @@ public class ListFragment extends Fragment {
     @OnItemClick(R.id.list)
     public void onListItemClicked(int position) {
         QuestionListAdapter.QuestionAdapterData item = (QuestionListAdapter.QuestionAdapterData) list.getAdapter().getItem(position);
-        questionService.insert(item.getQuestionId());
+        questionService.read(item.getQuestionId());
 
         item.setVisited(true);
         ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
@@ -163,23 +161,23 @@ public class ListFragment extends Fragment {
         refreshList(event.getStackOverflowQuery());
     }
 
-    private void refreshList(final SearchEvent.StackOverflowQuery query) {
+    private void refreshList(final SearchFragment.StackOverflowQuery query) {
         nextPage = 1;
-        stackOverflowApi.search(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.QueryResult>() {
+        stackOverflowApi.search(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.SearchResult>() {
             @Override
-            public void success(final StackOverflowApi.QueryResult queryResult, Response response) {
-                questionList = getAdapterData(queryResult.getQuestions());
+            public void success(final StackOverflowApi.SearchResult searchResult, Response response) {
+                questionList = getAdapterData(searchResult.getQuestions());
                 listStateBuilder.results(questionList);
 
                 list.setAdapter(new QuestionListAdapter(getActivity(), questionList));
-                if (queryResult.getHasMore()) {
+                if (searchResult.getHasMore()) {
                     list.setOnScrollListener(newOnScrollListener(query));
                 } else {
                     list.setOnScrollListener(null);
                     nextPage = -1;
                 }
                 swipeRefresh.setRefreshing(false);
-                Toast.makeText(getActivity(), "Total: " + list.getCount() + "\nNew: " + queryResult.getQuestions().size(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), "Total: " + list.getCount() + "\nNew: " + searchResult.getQuestions().size(), Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -190,20 +188,20 @@ public class ListFragment extends Fragment {
         });
     }
 
-    private void loadDataToList(final SearchEvent.StackOverflowQuery query) {
+    private void loadDataToList(final SearchFragment.StackOverflowQuery query) {
         if (isLoading) {
             return;
         }
         isLoading = true;
-        stackOverflowApi.search(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.QueryResult>() {
+        stackOverflowApi.search(query.getMappedQuery(), nextPage++, new Callback<StackOverflowApi.SearchResult>() {
             @Override
-            public void success(StackOverflowApi.QueryResult queryResult, Response response) {
-                List<QuestionListAdapter.QuestionAdapterData> receivedQuestions = getAdapterData(queryResult.getQuestions());
+            public void success(StackOverflowApi.SearchResult searchResult, Response response) {
+                List<QuestionListAdapter.QuestionAdapterData> receivedQuestions = getAdapterData(searchResult.getQuestions());
                 listStateBuilder.results(Lists.newArrayList(Iterables.concat(listStateBuilder.build().results(), receivedQuestions)));
                 if (questionList == null) {
                     questionList = receivedQuestions;
                     list.setAdapter(new QuestionListAdapter(getActivity(), questionList));
-                    if (queryResult.getHasMore()) {
+                    if (searchResult.getHasMore()) {
                         list.setOnScrollListener(newOnScrollListener(query));
                     } else {
                         list.setOnScrollListener(null);
@@ -213,7 +211,7 @@ public class ListFragment extends Fragment {
                     questionList.addAll(receivedQuestions);
                     ((BaseAdapter) list.getAdapter()).notifyDataSetChanged();
                 }
-                Toast.makeText(getActivity(), "Total: " + list.getCount() + "\nNew: " + queryResult.getQuestions().size(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(getActivity(), "Total: " + list.getCount() + "\nNew: " + searchResult.getQuestions().size(), Toast.LENGTH_SHORT).show();
                 swipeRefresh.setRefreshing(false);
                 isLoading = false;
             }
@@ -227,7 +225,7 @@ public class ListFragment extends Fragment {
     }
 
     private void handleFailure(RetrofitError error) {
-        String json =  new String(((TypedByteArray)error.getResponse().getBody()).getBytes());
+        String json = new String(((TypedByteArray) error.getResponse().getBody()).getBytes());
         String message = "";
         try {
             StackOverflowApi.ErrorResponse response = new Gson().fromJson(json, StackOverflowApi.ErrorResponse.class);
@@ -239,7 +237,7 @@ public class ListFragment extends Fragment {
         swipeRefresh.setRefreshing(false);
     }
 
-    private AbsListView.OnScrollListener newOnScrollListener(final SearchEvent.StackOverflowQuery query) {
+    private AbsListView.OnScrollListener newOnScrollListener(final SearchFragment.StackOverflowQuery query) {
         return new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView view, int scrollState) {
@@ -269,11 +267,12 @@ public class ListFragment extends Fragment {
                 questionAdapterData.setAnswered(input.getAnswered());
                 questionAdapterData.setCreationDate(input.getCreationDate());
                 questionAdapterData.setTags(input.getTags());
-                questionAdapterData.setOwnerDisplayName(input.getOwner().getDisplayName());
-                questionAdapterData.setOwnerProfileImageUrl(input.getOwner().getProfileImageUrl());
+                if (input.getOwner() != null) {
+                    questionAdapterData.setOwnerDisplayName(input.getOwner().getDisplayName());
+                    questionAdapterData.setOwnerProfileImageUrl(input.getOwner().getProfileImageUrl());
+                }
 
-                Question found = questionService.where().equalTo("questionId", input.getQuestionId()).findFirst();
-                questionAdapterData.setVisited(found != null);
+                questionAdapterData.setVisited(questionService.isRead(input.getQuestionId()));
                 return questionAdapterData;
             }
         }));

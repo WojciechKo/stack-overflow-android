@@ -1,5 +1,6 @@
 package info.korzeniowski.stackoverflow.searcher.rest;
 
+import com.google.common.collect.Lists;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.Date;
@@ -11,23 +12,34 @@ import retrofit.http.GET;
 import retrofit.http.Query;
 import retrofit.http.QueryMap;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public interface StackOverflowApi {
+    String SEARCH_QUERY_ORDER = "order";
+    String SEARCH_QUERY_SORT = "sort";
+    String SEARCH_QUERY_INTITLE = "intitle";
+    String SEARCH_QUERY_PAGE = "page";
 
     @GET("/search?site=stackoverflow&pagesize=20")
-    void search(@QueryMap Map<String, String> queryMap, @Query("page") int page, Callback<QueryResult> callback);
+    void search(@QueryMap Map<String, String> queryMap, @Query(SEARCH_QUERY_PAGE) int page, Callback<SearchResult> callback);
 
-    public static class QueryResult {
-        @SerializedName("items")
-        private List<Question> questions;
+    class SearchResult {
+        public static final String ITEMS = "items";
+        public static final String HAS_MORE = "has_more";
 
-        @SerializedName("has_more")
-        private Boolean hasMore;
+        @SerializedName(ITEMS)
+        private List<Question> questions = Lists.newArrayList();
+
+        @SerializedName(HAS_MORE)
+        private Boolean hasMore = false;
 
         public List<Question> getQuestions() {
             return questions;
         }
 
-        public QueryResult setQuestions(List<Question> questions) {
+        public SearchResult setQuestions(List<Question> questions) {
+            checkNotNull(questions);
+
             this.questions = questions;
             return this;
         }
@@ -36,33 +48,54 @@ public interface StackOverflowApi {
             return hasMore;
         }
 
-        public QueryResult setHasMore(Boolean hasMore) {
+        public SearchResult setHasMore(Boolean hasMore) {
+            checkNotNull(hasMore);
+
             this.hasMore = hasMore;
             return this;
         }
     }
 
-    public static class Question {
-        @SerializedName("question_id")
+    class Question {
+        public static final String QUESTION_ID = "question_id";
+        public static final String TITLE = "title";
+        public static final String LINK = "link";
+        public static final String SCORE = "score";
+        public static final String ANSWER_COUNT = "answer_count";
+        public static final String VIEW_COUNT = "view_count";
+        public static final String IS_ANSWERED = "is_answered";
+        public static final String CREATION_DATE = "creation_date";
+        public static final String TAGS = "tags";
+        public static final String OWNER = "owner";
+
+        @SerializedName(QUESTION_ID)
         private Long questionId;
+
+        @SerializedName(TITLE)
         private String title;
+
+        @SerializedName(LINK)
         private String link;
 
-        @SerializedName("score")
+        @SerializedName(SCORE)
         private Long votes;
 
-        @SerializedName("answer_count")
+        @SerializedName(ANSWER_COUNT)
         private Long answers;
 
-        @SerializedName("view_count")
+        @SerializedName(VIEW_COUNT)
         private Long views;
 
-        @SerializedName("is_answered")
+        @SerializedName(IS_ANSWERED)
         private Boolean answered;
 
-        @SerializedName("creation_date")
+        @SerializedName(CREATION_DATE)
         private Date creationDate;
+
+        @SerializedName(TAGS)
         private List<String> tags;
+
+        @SerializedName(OWNER)
         private Owner owner;
 
         public Long getQuestionId() {
@@ -156,11 +189,14 @@ public interface StackOverflowApi {
         }
     }
 
-    public static class Owner {
-        @SerializedName("profile_image")
+    class Owner {
+        public static final String PROFILE_IMAGE = "profile_image";
+        public static final String DISPLAY_NAME = "display_name";
+
+        @SerializedName(PROFILE_IMAGE)
         private String profileImageUrl;
 
-        @SerializedName("display_name")
+        @SerializedName(DISPLAY_NAME)
         private String displayName;
 
         public String getProfileImageUrl() {
@@ -182,14 +218,18 @@ public interface StackOverflowApi {
         }
     }
 
-    public static class ErrorResponse {
-        @SerializedName("error_id")
+    class ErrorResponse {
+        public static final String ERROR_ID = "error_id";
+        public static final String ERROR_MESSAGE = "error_message";
+        public static final String ERROR_NAME = "error_name";
+
+        @SerializedName(ERROR_ID)
         public String errorId;
 
-        @SerializedName("error_message")
+        @SerializedName(ERROR_MESSAGE)
         public String errorMsg;
 
-        @SerializedName("error_name")
+        @SerializedName(ERROR_NAME)
         public String errorName;
     }
 

@@ -1,6 +1,7 @@
 package info.korzeniowski.stackoverflow.searcher.ui.list;
 
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
@@ -11,12 +12,15 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.Spinner;
 
+import com.google.common.collect.Maps;
 import com.squareup.otto.Bus;
 
 import java.util.Arrays;
+import java.util.Map;
 
 import javax.inject.Inject;
 
+import auto.parcel.AutoParcel;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import butterknife.OnClick;
@@ -100,11 +104,46 @@ public class SearchFragment extends Fragment {
         }
         query.setError(null);
 
-        bus.post(new SearchEvent(SearchEvent.StackOverflowQuery
+        bus.post(new SearchEvent(StackOverflowQuery
                 .builder()
                 .intitle(query.getText().toString())
                 .sort(StackOverflowApi.SortBy.values()[sortBy.getSelectedItemPosition()])
                 .order(StackOverflowApi.OrderType.values()[order.getSelectedItemPosition()])
                 .build()));
+    }
+
+    @AutoParcel
+    public abstract static class StackOverflowQuery implements Parcelable {
+        abstract public StackOverflowApi.OrderType order();
+
+        abstract public StackOverflowApi.SortBy sort();
+
+        abstract public String intitle();
+
+        @AutoParcel.Builder
+        public interface Builder {
+            Builder order(StackOverflowApi.OrderType order);
+
+            Builder sort(StackOverflowApi.SortBy sort);
+
+            Builder intitle(String intitle);
+
+            StackOverflowQuery build();
+        }
+
+        public static Builder builder() {
+            return new AutoParcel_SearchFragment_StackOverflowQuery.Builder()
+                    .order(StackOverflowApi.OrderType.DESC)
+                    .sort(StackOverflowApi.SortBy.CREATION)
+                    .intitle("");
+        }
+
+        public Map<String, String> getMappedQuery() {
+            Map<String, String> result = Maps.newHashMap();
+            result.put(StackOverflowApi.SEARCH_QUERY_ORDER, order().toString());
+            result.put(StackOverflowApi.SEARCH_QUERY_SORT, sort().toString());
+            result.put(StackOverflowApi.SEARCH_QUERY_INTITLE, intitle());
+            return result;
+        }
     }
 }

@@ -17,14 +17,14 @@ public class QuestionService {
         realm.close();
     }
 
-    public void insert(Long questionId) {
+    public void read(Long questionId) {
         realm.beginTransaction();
         Question question = realm.createObject(Question.class);
         question.setQuestionId(questionId);
         realm.commitTransaction();
     }
 
-    public io.realm.RealmQuery<Question> where() {
-        return realm.where(Question.class);
+    public Boolean isRead(Long questionId) {
+        return questionId != null && realm.where(Question.class).equalTo(Question.questionIdFieldName, questionId).findFirst() != null;
     }
 }
