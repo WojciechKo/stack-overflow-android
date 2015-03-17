@@ -3,6 +3,9 @@ package info.korzeniowski.stackoverflow.searcher;
 import javax.inject.Singleton;
 
 import dagger.Component;
+import info.korzeniowski.stackoverflow.searcher.module.MockDatabaseModule;
+import info.korzeniowski.stackoverflow.searcher.module.MockStackOverflowModule;
+import info.korzeniowski.stackoverflow.searcher.test.ViewTest;
 
 public class TestApp extends App {
 
@@ -15,7 +18,7 @@ public class TestApp extends App {
                     MockStackOverflowModule.class
             })
     public interface TestApplicationComponent extends ApplicationComponent {
-        void inject(SimpleTest object);
+        void inject(ViewTest object);
     }
 
     @Override

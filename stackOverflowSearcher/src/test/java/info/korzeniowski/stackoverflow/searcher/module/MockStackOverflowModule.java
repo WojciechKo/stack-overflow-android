@@ -1,4 +1,4 @@
-package info.korzeniowski.stackoverflow.searcher;
+package info.korzeniowski.stackoverflow.searcher.module;
 
 import org.mockito.Mockito;
 

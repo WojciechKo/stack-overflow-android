@@ -98,12 +98,6 @@ public class SearchFragment extends Fragment {
 
     @OnClick(R.id.search)
     public void onSearchClicked() {
-        if (TextUtils.isEmpty(query.getText())) {
-            query.setError(getString(R.string.queryIsRequired));
-            return;
-        }
-        query.setError(null);
-
         bus.post(new SearchEvent(StackOverflowQuery
                 .builder()
                 .intitle(query.getText().toString())

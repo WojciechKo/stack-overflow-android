@@ -1,10 +1,12 @@
-package info.korzeniowski.stackoverflow.searcher;
+package info.korzeniowski.stackoverflow.searcher.test;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Spinner;
 
 import com.google.common.collect.Lists;
 
@@ -13,8 +15,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
@@ -28,11 +32,13 @@ import javax.inject.Inject;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
+import info.korzeniowski.stackoverflow.searcher.MyRobolectricTestRunner;
+import info.korzeniowski.stackoverflow.searcher.R;
+import info.korzeniowski.stackoverflow.searcher.TestApp;
 import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
 import info.korzeniowski.stackoverflow.searcher.ui.details.DetailsActivity;
 import info.korzeniowski.stackoverflow.searcher.ui.list.MainActivity;
 import info.korzeniowski.stackoverflow.searcher.ui.list.QuestionListAdapter;
-import info.korzeniowski.stackoverflow.searcher.ui.list.SearchFragment;
 import retrofit.Callback;
 
 import static org.fest.assertions.api.ANDROID.assertThat;
@@ -43,12 +49,18 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 
 @RunWith(MyRobolectricTestRunner.class)
-public class SimpleTest {
+public class ViewTest {
 
     private Activity activity;
 
     @InjectView(R.id.query)
     EditText query;
+
+    @InjectView(R.id.sortBy)
+    Spinner sortView;
+
+    @InjectView(R.id.order)
+    Spinner orderView;
 
     @InjectView(R.id.search)
     Button search;
@@ -59,8 +71,13 @@ public class SimpleTest {
     @Inject
     StackOverflowApi mockRestApi;
 
+    @Captor
+    ArgumentCaptor<Map<String, String>> queryMapCaptor;
+
     @Before
     public void setUp() {
+        MockitoAnnotations.initMocks(this);
+
         ((TestApp) RuntimeEnvironment.application).component().inject(this);
 
         activity = Robolectric.buildActivity(MainActivity.class).create().start().resume().get();
@@ -68,7 +85,7 @@ public class SimpleTest {
     }
 
     @Test
-    public void shouldPopulateListWithWithRestApiData() {
+    public void shouldPopulateListWithRestApiData() {
         // given
         String queryText = "simple query";
         query.setText(queryText);
@@ -123,24 +140,31 @@ public class SimpleTest {
     }
 
     @Test
-    public void shouldBuildMappedQuery() {
+    public void shouldPassArgumentsFromViewToRestApi() {
         // given
-        String intitle = "intitle query";
-        StackOverflowApi.SortBy sort = StackOverflowApi.SortBy.CREATION;
-        StackOverflowApi.OrderType order = StackOverflowApi.OrderType.ASC;
+        String intitle = "intitle";
+        query.setText(intitle);
 
-        SearchFragment.StackOverflowQuery.Builder builder = SearchFragment.StackOverflowQuery.builder()
-                .order(order)
-                .sort(sort)
-                .intitle(intitle);
+        StackOverflowApi.SortBy sortByItem = StackOverflowApi.SortBy.CREATION;
+        ArrayAdapter<StackOverflowApi.SortBy> sortByAdapter = (ArrayAdapter<StackOverflowApi.SortBy>) sortView.getAdapter();
+        sortView.setSelection(sortByAdapter.getPosition(sortByItem));
+
+
+        StackOverflowApi.OrderType orderTypeItem = StackOverflowApi.OrderType.DESC;
+        ArrayAdapter<StackOverflowApi.OrderType> orderTypeAdapter = (ArrayAdapter<StackOverflowApi.OrderType>) orderView.getAdapter();
+        orderView.setSelection(orderTypeAdapter.getPosition(orderTypeItem));
 
         // when
-        SearchFragment.StackOverflowQuery query = builder.build();
+        search.performClick();
 
         // then
-        Map<String, String> mappedQuery = query.getMappedQuery();
-        assertThat(mappedQuery.get(StackOverflowApi.SEARCH_QUERY_ORDER)).isEqualToIgnoringCase(order.toString());
-        assertThat(mappedQuery.get(StackOverflowApi.SEARCH_QUERY_SORT)).isEqualToIgnoringCase(sort.toString());
-        assertThat(mappedQuery.get(StackOverflowApi.SEARCH_QUERY_INTITLE)).isEqualToIgnoringCase(intitle);
+        Mockito.verify(mockRestApi, times(1)).search(queryMapCaptor.capture(), any(Integer.class), any(Callback.class));
+
+        assertThat(queryMapCaptor.getValue().get(StackOverflowApi.SEARCH_QUERY_INTITLE))
+                .isEqualTo(intitle);
+        assertThat(queryMapCaptor.getValue().get(StackOverflowApi.SEARCH_QUERY_ORDER))
+                .isEqualToIgnoringCase(orderTypeItem.toString());
+        assertThat(queryMapCaptor.getValue().get(StackOverflowApi.SEARCH_QUERY_SORT))
+                .isEqualToIgnoringCase(sortByItem.toString());
     }
 }
