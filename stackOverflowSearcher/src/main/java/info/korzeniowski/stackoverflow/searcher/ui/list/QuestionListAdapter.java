@@ -26,7 +26,6 @@ import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -115,14 +114,14 @@ public class QuestionListAdapter extends BaseAdapter {
 
     private BitmapDrawable getImageSpanForTag(String tagName) {
         // creating textview dynamically
-        final TextView tv = new TextView(getContext());
+        final TextView tv = new TextView(context);
         tv.setText(tagName);
         tv.setTextSize(35);
-        Drawable drawable = getContext().getResources().getDrawable(R.drawable.oval);
+        Drawable drawable = context.getResources().getDrawable(R.drawable.oval);
         drawable.setColorFilter(Color.parseColor("#e4edf4"), PorterDuff.Mode.SRC);
         tv.setBackground(drawable);
         tv.setTextColor(Color.parseColor("#3e6d8e"));
-        tv.setPadding(dipToPixels(getContext(), 15), 0, dipToPixels(getContext(), 15), dipToPixels(getContext(), 1));
+        tv.setPadding(dipToPixels(context, 15), 0, dipToPixels(context, 15), dipToPixels(context, 1));
 
         // convert View to Drawable
         int spec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
@@ -141,10 +140,6 @@ public class QuestionListAdapter extends BaseAdapter {
         bitmapDrawable.setBounds(0, 0, bitmapDrawable.getIntrinsicWidth(), bitmapDrawable.getIntrinsicHeight());
 
         return bitmapDrawable;
-    }
-
-    private Context getContext() {
-        return context;
     }
 
     public static class ViewHolder {

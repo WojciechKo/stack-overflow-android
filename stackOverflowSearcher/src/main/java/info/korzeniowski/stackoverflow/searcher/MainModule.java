@@ -15,6 +15,7 @@ import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
+import info.korzeniowski.stackoverflow.searcher.util.Utils;
 import retrofit.client.OkClient;
 
 @Module
@@ -30,6 +31,12 @@ public class MainModule {
     @Singleton
     Context provideContext() {
         return context;
+    }
+
+    @Provides
+    @Singleton
+    Utils provideUtils() {
+        return new Utils(context);
     }
 
     @Provides

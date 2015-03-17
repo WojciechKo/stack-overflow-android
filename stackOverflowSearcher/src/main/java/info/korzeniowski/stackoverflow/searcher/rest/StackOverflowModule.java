@@ -1,7 +1,5 @@
 package info.korzeniowski.stackoverflow.searcher.rest;
 
-import android.content.Context;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -17,7 +15,6 @@ import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
-import info.korzeniowski.stackoverflow.searcher.rest.StackOverflowApi;
 import info.korzeniowski.stackoverflow.searcher.util.Utils;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
@@ -28,12 +25,12 @@ import retrofit.converter.GsonConverter;
 public class StackOverflowModule {
     @Provides
     @Singleton
-    StackOverflowApi provideStackOverflowApi(final Context context, OkClient okClient) {
+    StackOverflowApi provideStackOverflowApi(final Utils utils, OkClient okClient) {
         RequestInterceptor requestInterceptor = new RequestInterceptor() {
             @Override
             public void intercept(RequestFacade request) {
                 request.addHeader("Accept", "application/json;versions=1");
-                if (Utils.isNetworkAvailable(context)) {
+                if (utils.isNetworkAvailable()) {
                     int maxAge = 60; // read from cache for 1 minute
                     request.addHeader("Cache-Control", "public, max-age=" + maxAge);
                 } else {
